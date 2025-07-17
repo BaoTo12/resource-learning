@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Advanced Docker Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Subtle Accents -->
+    <!-- Application Structure Plan: A dashboard-style, single-page application with a fixed side navigation. This structure was chosen to allow users to easily jump between complex, interrelated topics (like Networking and Security) without losing context. Each section acts as a "mini-module" with interactive elements like clickable diagrams, tabbed content, and charts to make dense technical information digestible. The user flow is non-linear, encouraging exploration based on interest rather than a rigid, sequential reading of the original report. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Dockerfile Optimization -> Goal: Compare techniques -> Viz/Method: Interactive card layout with tabs (HTML/JS) -> Interaction: Clicking tabs reveals details on Multi-stage, Caching, etc. -> Justification: Allows direct comparison of optimization strategies.
+        - Report Info: Networking Models -> Goal: Explain and compare -> Viz/Method: Clickable diagram (HTML/CSS/JS) linked to detail panes -> Interaction: Clicking a network driver (Bridge, Host) on the diagram displays its characteristics and use cases. -> Justification: Visually represents the relationship between drivers and simplifies complex concepts.
+        - Report Info: Storage Comparison -> Goal: Compare Volumes vs. Bind Mounts -> Viz/Method: Bar chart (Chart.js) comparing attributes like Portability and Security. -> Interaction: Hovering over bars shows detailed tooltips. -> Justification: Quantifies qualitative comparisons for quicker understanding.
+        - Report Info: Security Concepts -> Goal: Organize best practices -> Viz/Method: Accordion-style list (HTML/JS) -> Interaction: Clicking a practice (e.g., "Least Privileges") expands to show details. -> Justification: Organizes a large amount of text into a manageable, scannable format.
+        - Report Info: Resource Limits -> Goal: Inform -> Viz/Method: Dynamic stat cards (HTML/JS) -> Interaction: Click to flip card for more info on CPU/Memory flags. -> Justification: Presents key CLI flags in a memorable, bite-sized format.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #3d3d3d;
+        }
+
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            background-color: #eaddc7;
+            color: #3d3d3d;
+            transform: translateX(4px);
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .tab-button.active {
+            background-color: #d1c5b4;
+            border-color: #bfae98;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+
+<body class="flex min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-1/5 bg-[#ece7dd] p-6 hidden lg:flex flex-col space-y-4">
+        <h1 class="text-2xl font-bold text-[#3d3d3d] mb-6">Mastering Docker</h1>
+        <nav id="main-nav" class="space-y-2">
+            <a href="#intro" data-section="intro" class="nav-link block p-3 rounded-lg font-medium">Introduction</a>
+            <a href="#dockerfile" data-section="dockerfile" class="nav-link block p-3 rounded-lg font-medium">Dockerfile
+                & Images</a>
+            <a href="#compose" data-section="compose" class="nav-link block p-3 rounded-lg font-medium">Docker
+                Compose</a>
+            <a href="#networking" data-section="networking"
+                class="nav-link block p-3 rounded-lg font-medium">Networking</a>
+            <a href="#storage" data-section="storage" class="nav-link block p-3 rounded-lg font-medium">Storage</a>
+            <a href="#security" data-section="security" class="nav-link block p-3 rounded-lg font-medium">Security</a>
+            <a href="#performance" data-section="performance"
+                class="nav-link block p-3 rounded-lg font-medium">Performance</a>
+            <a href="#swarm" data-section="swarm" class="nav-link block p-3 rounded-lg font-medium">Docker Swarm</a>
+            <a href="#troubleshooting" data-section="troubleshooting"
+                class="nav-link block p-3 rounded-lg font-medium">Troubleshooting</a>
+        </nav>
+    </aside>
+
+    <!-- Mobile Navigation -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#ece7dd] z-50 shadow-t">
+        <select id="mobile-nav" class="w-full p-4 bg-[#ece7dd] text-[#3d3d3d] font-medium border-t-2 border-[#d1c5b4]">
+            <option value="intro">Introduction</option>
+            <option value="dockerfile">Dockerfile & Images</option>
+            <option value="compose">Docker Compose</option>
+            <option value="networking">Networking</option>
+            <option value="storage">Storage</option>
+            <option value="security">Security</option>
+            <option value="performance">Performance</option>
+            <option value="swarm">Docker Swarm</option>
+            <option value="troubleshooting">Troubleshooting</option>
+        </select>
+    </div>
+
+    <!-- Main Content -->
+    <main class="w-full lg:w-4/5 p-6 sm:p-10 pb-20 lg:pb-10">
+        <!-- Introduction Section -->
+        <section id="intro" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Elevating Your Docker Expertise</h2>
+            <p class="text-lg text-gray-700">This guide moves beyond foundational knowledge into the advanced
+                capabilities required to build robust, efficient, and secure containerized applications. Here, you'll
+                explore sophisticated features and best practices through an interactive dashboard, designed to
+                transform your understanding and application of Docker.</p>
+            <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                <h3 class="font-semibold text-xl mb-3">How to Use This Guide</h3>
+                <p class="text-gray-600">Use the navigation on the left (or the dropdown on mobile) to jump between
+                    topics. Each section provides interactive elements to help you explore the concepts from the report.
+                    Click on diagrams, switch between tabs, and hover over charts to reveal detailed information. The
+                    goal is active exploration, not passive reading.</p>
+            </div>
+        </section>
+
+        <!-- Dockerfile Section -->
+        <section id="dockerfile" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Dockerfile & Image Optimization</h2>
+            <p class="text-lg text-gray-700">Building efficient and secure Docker images is crucial for streamlined
+                deployments. This section explores advanced techniques like multi-stage builds and cache optimization to
+                create lean, production-ready images. Interact with the tabs below to compare different strategies.</p>
+            <div id="dockerfile-tabs" class="flex border-b border-gray-300 mb-4 space-x-2">
+                <button data-tab="multistage"
+                    class="tab-button p-3 font-medium text-gray-700 border-b-2 border-transparent">Multi-Stage
+                    Builds</button>
+                <button data-tab="cache"
+                    class="tab-button p-3 font-medium text-gray-700 border-b-2 border-transparent">Build Cache</button>
+                <button data-tab="layering"
+                    class="tab-button p-3 font-medium text-gray-700 border-b-2 border-transparent">Layering &
+                    Sizing</button>
+            </div>
+            <div id="dockerfile-content" class="p-6 bg-white/50 rounded-xl border border-gray-200 min-h-[300px]">
+                <!-- Content will be injected by JS -->
+            </div>
+        </section>
+
+        <!-- Docker Compose Section -->
+        <section id="compose" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Advanced Docker Compose Patterns</h2>
+            <p class="text-lg text-gray-700">Docker Compose is essential for multi-container applications. Explore
+                advanced patterns for managing service dependencies, modularizing configurations for reusability, and
+                tailoring deployments for different environments like development or testing.</p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Service Dependencies</h3>
+                    <p class="text-gray-600 mb-4">`depends_on` alone only waits for a service to start, not for it to be
+                        ready. Combine it with a `healthcheck` and `condition: service_healthy` to prevent race
+                        conditions where your app can't connect to a database that is still initializing.</p>
+                    <div class="p-3 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">
+                        <pre><code class="language-yaml">web:
+  depends_on:
+    db:
+      condition: service_healthy</code></pre>
+                    </div>
+                </div>
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Environment Profiles</h3>
+                    <p class="text-gray-600 mb-4">Use `profiles` to define services that only run in specific
+                        environments (e.g., 'dev', 'testing'). This keeps your main `compose.yml` clean while supporting
+                        different use cases. Core services without a profile are always enabled.</p>
+                    <div class="p-3 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">
+                        <pre><code class="language-yaml">services:
+  debugger:
+    profiles: ["dev"]</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Networking Section -->
+        <section id="networking" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Deep Dive into Docker Networking</h2>
+            <p class="text-lg text-gray-700">Docker's networking is key to container communication. The diagram below
+                illustrates the core network drivers. Click on a driver to understand its use case, performance, and
+                isolation characteristics.</p>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div id="network-diagram" class="w-full md:w-1/2 grid grid-cols-2 gap-4">
+                    <div data-network="bridge"
+                        class="network-node cursor-pointer p-4 bg-white/50 rounded-xl border-2 border-gray-200 hover:border-[#bfae98] transition-all text-center">
+                        <h4 class="font-bold text-lg">Bridge</h4>
+                        <p class="text-sm text-gray-600">Single Host Isolation</p>
+                    </div>
+                    <div data-network="host"
+                        class="network-node cursor-pointer p-4 bg-white/50 rounded-xl border-2 border-gray-200 hover:border-[#bfae98] transition-all text-center">
+                        <h4 class="font-bold text-lg">Host</h4>
+                        <p class="text-sm text-gray-600">Max Performance</p>
+                    </div>
+                    <div data-network="overlay"
+                        class="network-node cursor-pointer p-4 bg-white/50 rounded-xl border-2 border-gray-200 hover:border-[#bfae98] transition-all text-center">
+                        <h4 class="font-bold text-lg">Overlay</h4>
+                        <p class="text-sm text-gray-600">Multi-Host Cluster</p>
+                    </div>
+                    <div data-network="macvlan"
+                        class="network-node cursor-pointer p-4 bg-white/50 rounded-xl border-2 border-gray-200 hover:border-[#bfae98] transition-all text-center">
+                        <h4 class="font-bold text-lg">Macvlan</h4>
+                        <p class="text-sm text-gray-600">Physical Network Layer</p>
+                    </div>
+                </div>
+                <div id="network-details" class="w-full md:w-1/2 p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <!-- Details injected by JS -->
+                    <p class="text-gray-500">Select a network driver from the diagram to see details.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Storage Section -->
+        <section id="storage" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Persistent Storage Solutions</h2>
+            <p class="text-lg text-gray-700">Containers are ephemeral, but data needs to persist. Docker's main storage
+                solutions, Volumes and Bind Mounts, offer different trade-offs in management, portability, and security.
+                The chart below compares their key attributes.</p>
+            <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                <div class="chart-container">
+                    <canvas id="storageChart"></canvas>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-[#eaddc7]/50 rounded-md text-center">
+                <p class="font-medium text-gray-800">Key takeaway: Use <strong class="font-bold">Volumes</strong> for
+                    application data in production for better security and portability. Use <strong
+                        class="font-bold">Bind Mounts</strong> for development or mounting host config files.</p>
+            </div>
+        </section>
+
+        <!-- Security Section -->
+        <section id="security" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Docker Security Best Practices</h2>
+            <p class="text-lg text-gray-700">Securing Docker involves a layered approach, from building secure images to
+                managing runtime privileges and sensitive data. Explore the key security practices below by clicking on
+                each topic.</p>
+            <div id="security-accordion" class="space-y-3">
+                <!-- Accordion items injected by JS -->
+            </div>
+        </section>
+
+        <!-- Performance Section -->
+        <section id="performance" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Performance & Resource Management</h2>
+            <p class="text-lg text-gray-700">By default, containers can use unlimited host resources. Setting CPU and
+                memory limits is crucial for stability and cost-effectiveness. Explore key flags below for controlling
+                container resources.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Memory Limits</h3>
+                    <p class="text-gray-600 mb-2">Use `--memory` (or `-m`) for hard limits to prevent OOM errors, and
+                        `--memory-reservation` for soft limits during host contention.</p>
+                    <code class="p-2 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">--memory="512m"</code>
+                </div>
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">CPU Limits</h3>
+                    <p class="text-gray-600 mb-2">Use `--cpus` to set a hard limit on the number of CPUs a container can
+                        use, or `--cpu-shares` for a relative weight against other containers.</p>
+                    <code class="p-2 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">--cpus="1.5"</code>
+                </div>
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Monitoring</h3>
+                    <p class="text-gray-600 mb-2">Use `docker stats` for a live stream of resource usage. This is your
+                        first step to identifying performance bottlenecks.</p>
+                    <code class="p-2 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">docker stats</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Swarm Section -->
+        <section id="swarm" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Introduction to Docker Swarm</h2>
+            <p class="text-lg text-gray-700">Docker Swarm is Docker's native orchestration tool for managing a cluster
+                of Docker nodes. It focuses on a declarative model where you define the desired state, and Swarm works
+                to maintain it, providing scaling, rolling updates, and self-healing.</p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Declarative Services</h3>
+                    <p class="text-gray-600">You define a service with a specific image and number of replicas. Swarm's
+                        manager node ensures that the correct number of tasks (containers) are always running,
+                        rescheduling them if a node fails.</p>
+                </div>
+                <div class="p-6 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3">Ingress Routing Mesh</h3>
+                    <p class="text-gray-600">Exposing a port on a service makes it accessible on that port across *every
+                        node* in the swarm. The mesh automatically routes requests to a healthy container, simplifying
+                        load balancing.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Troubleshooting Section -->
+        <section id="troubleshooting" class="content-section space-y-6">
+            <h2 class="text-4xl font-bold text-[#3d3d3d]">Effective Troubleshooting</h2>
+            <p class="text-lg text-gray-700">Proficiency in debugging is a critical skill. A systematic approach using
+                Docker's built-in tools can quickly resolve most common issues.</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="p-4 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-lg">`docker logs`</h3>
+                    <p class="text-sm text-gray-600">Check application output and errors.</p>
+                </div>
+                <div class="p-4 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-lg">`docker inspect`</h3>
+                    <p class="text-sm text-gray-600">Verify configurations like networks and ports.</p>
+                </div>
+                <div class="p-4 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-lg">`docker exec`</h3>
+                    <p class="text-sm text-gray-600">Run commands inside a container for live debugging.</p>
+                </div>
+                <div class="p-4 bg-white/50 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-lg">`docker stats`</h3>
+                    <p class="text-sm text-gray-600">Monitor live resource usage.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mainNavLinks = document.querySelectorAll('#main-nav a');
+            const mobileNav = document.getElementById('mobile-nav');
+            const contentSections = document.querySelectorAll('.content-section');
+            const dockerfileTabs = document.querySelectorAll('#dockerfile-tabs button');
+            const dockerfileContent = document.getElementById('dockerfile-content');
+            const networkNodes = document.querySelectorAll('.network-node');
+            const networkDetails = document.getElementById('network-details');
+            const securityAccordion = document.getElementById('security-accordion');
+
+            // Data for interactive elements
+            const dockerfileData = {
+                multistage: {
+                    title: 'Multi-Stage Builds',
+                    description: 'Use multiple `FROM` statements to create separate build and production stages. This is the most effective way to create lean production images by discarding build-time dependencies like compilers and dev libraries.',
+                    code: 'FROM node:18 AS builder\n# ... build app ...\n\nFROM node:18-alpine\nCOPY --from=builder /app/build ./build'
+                },
+                cache: {
+                    title: 'Build Cache Optimization',
+                    description: 'Order your Dockerfile layers from least to most frequently changing. Copy dependency manifests (`package.json`) and install dependencies *before* copying your application source code to maximize cache hits and speed up builds.',
+                    code: 'COPY package*.json ./\nRUN npm install\n# Only now copy the rest of the code\nCOPY . .'
+                },
+                layering: {
+                    title: 'Layering & Sizing',
+                    description: 'Combine commands using `&&` to reduce layers and clean up artifacts in the same layer (e.g., `apt-get clean`). Use minimal base images like `alpine` or `distroless` and a `.dockerignore` file to exclude unnecessary files from the build context.',
+                    code: 'RUN apt-get update && apt-get install -y ... && rm -rf /var/lib/apt/lists/*'
+                }
+            };
+
+            const networkData = {
+                bridge: {
+                    title: 'Bridge Network',
+                    description: 'The default driver for single-host applications. It creates a private, isolated network for containers, requiring port mapping for external access. Provides automatic DNS resolution between containers on the same network.',
+                    pros: ['Good isolation', 'Automatic DNS'],
+                    cons: ['Single host only', 'Slight performance overhead']
+                },
+                host: {
+                    title: 'Host Network',
+                    description: 'Removes network isolation, binding the container directly to the host\'s network. This offers the best performance but is less secure and can lead to port conflicts.',
+                    pros: ['Highest performance', 'No NAT overhead'],
+                    cons: ['Reduced security', 'Port conflicts possible']
+                },
+                overlay: {
+                    title: 'Overlay Network',
+                    description: 'Designed for multi-host communication, essential for Docker Swarm. It creates a distributed network that allows containers on different hosts to communicate seamlessly as if they were on the same machine.',
+                    pros: ['Multi-host communication', 'Built-in load balancing'],
+                    cons: ['More complex setup', 'Requires Swarm/KV store']
+                },
+                macvlan: {
+                    title: 'Macvlan Network',
+                    description: 'Assigns a MAC address to a container, making it appear as a physical device on the network. Useful for legacy applications or monitoring tools that need to be on the physical network.',
+                    pros: ['Direct network access', 'Legacy app compatibility'],
+                    cons: ['Requires promiscuous mode', 'Complex network config']
+                }
+            };
+
+            const securityData = [
+                { title: 'Image Security', content: 'Always use trusted, minimal base images (e.g., `alpine`, `distroless`) and pin specific versions. Integrate vulnerability scanning tools like Trivy into your CI/CD pipeline and enforce Docker Content Trust (`DOCKER_CONTENT_TRUST=1`) to use only signed images.' },
+                { title: 'Least Privilege Principle', content: 'Avoid running containers as `root` and never use the `--privileged` flag in production. Drop unnecessary Linux capabilities with `--cap-drop` to limit the potential impact of a container compromise.' },
+                { title: 'Secrets Management', content: 'Never hardcode secrets in Dockerfiles or environment variables. Use Docker Secrets for Swarm (encrypted at rest and in-transit) or a dedicated secrets manager like HashiCorp Vault for other environments.' },
+                { title: 'Runtime Isolation', content: 'Enable User Namespaces or run Docker in Rootless Mode to map the container\'s root user to an unprivileged user on the host. This significantly mitigates the risk of a container escape.' }
+            ];
+
+            // Navigation
+            function showSection(sectionId) {
+                contentSections.forEach(section => {
+                    section.classList.toggle('active', section.id === sectionId);
+                });
+                mainNavLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.section === sectionId);
+                });
+                if (mobileNav.value !== sectionId) {
+                    mobileNav.value = sectionId;
+                }
+            }
+
+            mainNavLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = e.currentTarget.dataset.section;
+                    showSection(sectionId);
+                    window.location.hash = sectionId;
+                });
+            });
+
+            mobileNav.addEventListener('change', (e) => {
+                showSection(e.target.value);
+                window.location.hash = e.target.value;
+            });
+
+            // Dockerfile Tabs
+            function showDockerfileTab(tabId) {
+                const data = dockerfileData[tabId];
+                dockerfileContent.innerHTML = `
+                    <h3 class="font-semibold text-xl mb-3">${data.title}</h3>
+                    <p class="text-gray-600 mb-4">${data.description}</p>
+                    <div class="p-3 bg-[#eaddc7]/50 rounded-md text-sm text-gray-800">
+                        <pre><code>${data.code}</code></pre>
+                    </div>
+                `;
+                dockerfileTabs.forEach(button => {
+                    button.classList.toggle('active', button.dataset.tab === tabId);
+                });
+            }
+
+            dockerfileTabs.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    showDockerfileTab(e.currentTarget.dataset.tab);
+                });
+            });
+
+            // Networking Diagram
+            function showNetworkDetails(networkId) {
+                const data = networkData[networkId];
+                networkDetails.innerHTML = `
+                    <h3 class="font-bold text-xl mb-3">${data.title}</h3>
+                    <p class="text-gray-600 mb-4">${data.description}</p>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <h4 class="font-semibold mb-1">Pros</h4>
+                            <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                ${data.pros.map(p => `<li>${p}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Cons</h4>
+                            <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                ${data.cons.map(c => `<li>${c}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                networkNodes.forEach(node => {
+                    node.classList.toggle('border-[#bfae98]', node.dataset.network === networkId);
+                    node.classList.toggle('bg-[#eaddc7]/50', node.dataset.network === networkId);
+                });
+            }
+
+            networkNodes.forEach(node => {
+                node.addEventListener('click', (e) => {
+                    showNetworkDetails(e.currentTarget.dataset.network);
+                });
+            });
+
+            // Security Accordion
+            securityAccordion.innerHTML = securityData.map((item, index) => `
+                <div class="bg-white/50 rounded-xl border border-gray-200 overflow-hidden">
+                    <button class="accordion-toggle w-full p-4 text-left font-semibold flex justify-between items-center">
+                        ${item.title}
+                        <span class="transform transition-transform duration-200">&#9662;</span>
+                    </button>
+                    <div class="accordion-content hidden p-4 pt-0 text-gray-600">
+                        <p>${item.content}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.accordion-toggle').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('span');
+                    content.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            // Storage Chart
+            const ctx = document.getElementById('storageChart').getContext('2d');
+            const storageChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Volumes', 'Bind Mounts', 'tmpfs Mounts'],
+                    datasets: [{
+                        label: 'Portability & Management',
+                        data: [9, 3, 5],
+                        backgroundColor: 'rgba(119, 107, 93, 0.7)',
+                    }, {
+                        label: 'Security (Isolation)',
+                        data: [8, 2, 7],
+                        backgroundColor: 'rgba(209, 197, 180, 0.8)',
+                    }, {
+                        label: 'Performance',
+                        data: [7, 8, 10],
+                        backgroundColor: 'rgba(191, 174, 152, 0.7)',
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: 'Relative Score (Higher is Better)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                footer: (tooltipItems) => {
+                                    if (tooltipItems[0].datasetIndex === 0) return 'Docker-managed, high portability.';
+                                    if (tooltipItems[0].datasetIndex === 1) return 'Host-managed, low portability.';
+                                    if (tooltipItems[0].datasetIndex === 2) return 'Memory only, no persistence.';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initial state
+            const initialSection = window.location.hash.substring(1) || 'intro';
+            showSection(initialSection);
+            showDockerfileTab('multistage');
+            showNetworkDetails('bridge');
+        });
+    </script>
+</body>
+
+</html>
