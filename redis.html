@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Interactive Redis Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: The SPA is organized into four main thematic sections accessible via a sticky top navigation: 'Overview', 'Core Architecture', 'Use Cases', and 'Implementation'. This structure facilitates a logical user journey, starting with high-level concepts and allowing progressive deep-dives into architecture, practical applications, and developer-focused details. The 'Overview' serves as a landing dashboard. 'Core Architecture' uses interactive cards and diagrams for complex topics like data structures and persistence. 'Use Cases' presents case studies in a storytelling format. 'Implementation' provides practical code examples. This non-linear, task-oriented structure was chosen over the report's linear format to cater to different user personas (e.g., architects, developers, students) and allow them to quickly access the information most relevant to them, enhancing usability and knowledge retention. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Redis vs RDBMS vs NoSQL comparison. Goal: Compare. Viz/Method: Interactive Bar Chart (Chart.js). Interaction: Tooltips on hover provide detailed comparisons. Justification: A visual bar chart offers a much quicker and more impactful understanding of relative strengths than a dense table. Library: Chart.js.
+        2. Report Info: Persistence options (RDB, AOF, Hybrid). Goal: Organize/Inform. Viz/Method: Interactive HTML/CSS diagram representing a decision flow. Interaction: Clicking on nodes reveals detailed explanations of each persistence strategy's trade-offs. Justification: Transforms a complex decision into a guided, interactive experience, improving clarity. Library/Method: HTML/CSS with JS toggle.
+        3. Report Info: High Availability models (Replication, Sentinel, Cluster). Goal: Organize. Viz/Method: Three-column layout with simplified diagrams built with HTML/CSS. Interaction: Hover effects on components to highlight their roles. Justification: Visually breaks down complex distributed systems into understandable parts. Library/Method: HTML/CSS.
+        4. Report Info: Core Data Structures. Goal: Inform/Engage. Viz/Method: Grid of interactive cards. Interaction: Clicking a card flips it or expands a section to show common commands and use cases. Justification: Gamifies the exploration of Redis's features, making it more engaging and less monotonous than a simple list. Library/Method: HTML/CSS with JS toggle.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #fdfbf8;
+            color: #403a3a;
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #c77d3c;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            color: #c77d3c;
+        }
+
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .content-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .content-section.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #eae2d9;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #c77d3c;
+            border-bottom-color: #c77d3c;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        .code-block {
+            background-color: #2d2d2d;
+            color: #eaeaea;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-[#C77D3C]">Redis Interactive Report</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview"
+                            class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 active">Overview</a>
+                        <a href="#architecture"
+                            class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Core
+                            Architecture</a>
+                        <a href="#use-cases" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Use
+                            Cases</a>
+                        <a href="#implementation"
+                            class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">Implementation</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <section id="overview" class="content-section active">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                    Redis: An In-Depth Analysis
+                </h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">
+                    An interactive exploration of the high-performance, in-memory data
+                    platform.
+                </p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-md mb-12 border border-gray-200">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                    Executive Summary
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    This application provides a comprehensive analysis of Redis, the
+                    **RE**mote **DI**ctionary **S**erver. As an open-source, in-memory
+                    NoSQL key-value store, Redis excels at providing unparalleled speed
+                    for caching, real-time analytics, messaging, and more. Here, we'll
+                    explore its core concepts, architecture, and practical applications,
+                    providing a definitive reference for technical professionals to
+                    understand and leverage its capabilities.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3">🚀 Strengths</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">⚡️</span>
+                            <strong>Exceptional Speed:</strong> Sub-millisecond latency due
+                            to in-memory architecture.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">🧩</span>
+                            <strong>Versatile Data Structures:</strong> Rich support for
+                            Strings, Lists, Hashes, Sets, etc.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">📈</span>
+                            <strong>High Availability & Scalability:</strong> Built-in
+                            Replication, Sentinel, and Cluster.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">💾</span>
+                            <strong>Persistence Options:</strong> RDB and AOF for data
+                            durability.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">🔒</span>
+                            <strong>Atomic Operations:</strong> Guarantees for commands and
+                            Lua scripts.
+                        </li>
+                    </ul>
+                </div>
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3">🐌 Weaknesses</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">🧠</span>
+                            <strong>Memory Constraints:</strong> Dataset size limited by
+                            available RAM.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">🛡️</span>
+                            <strong>Durability Trade-offs:</strong> Potential for minor data
+                            loss with default persistence.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">❓</span>
+                            <strong>Limited Querying:</strong> No complex SQL-like joins or
+                            aggregations.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">⚙️</span>
+                            <strong>Operational Overhead:</strong> Scaling and HA
+                            configurations require expertise.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 mt-1">🔑</span>
+                            <strong>Default Security:</strong> Requires careful
+                            configuration to secure.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-semibold text-center mb-4 text-gray-800">
+                    Redis in the Database Landscape
+                </h2>
+                <p class="text-center text-gray-600 mb-8">
+                    This chart provides a visual comparison of Redis against traditional
+                    Relational Databases (RDBMS) and other common NoSQL databases on key
+                    architectural and performance characteristics. Hover over the bars
+                    to see how Redis's in-memory design gives it a distinct advantage in
+                    speed while differing in data complexity and consistency models.
+                </p>
+                <div class="chart-container">
+                    <canvas id="dbComparisonChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="content-section">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                    Core Architecture
+                </h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">
+                    Dive into the fundamental components that make Redis so powerful,
+                    from its versatile data structures to its robust persistence and
+                    high-availability models.
+                </p>
+            </div>
+
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">
+                    Data Structures
+                </h2>
+                <p class="text-center text-gray-600 mb-8">
+                    Redis is more than a simple key-value store; it's a data structure
+                    server. Click on each card to learn about its primary function,
+                    common commands, and ideal use cases.
+                </p>
+                <div id="data-structures-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">
+                    Persistence Options
+                </h2>
+                <p class="text-center text-gray-600 mb-8">
+                    While Redis lives in memory, it offers robust ways to save data to
+                    disk. The choice between RDB, AOF, or a hybrid approach depends on
+                    your application's tolerance for data loss versus performance needs.
+                    Interact with the diagram below to understand the trade-offs.
+                </p>
+                <div class="flex flex-col md:flex-row gap-6 text-center">
+                    <div class="flex-1 card rounded-lg p-6 cursor-pointer" onclick="showPersistenceDetail('rdb')">
+                        <h3 class="text-xl font-semibold mb-2">RDB Snapshotting</h3>
+                        <p class="text-sm text-gray-600">
+                            Point-in-time snapshots. Fast, compact, ideal for backups.
+                        </p>
+                    </div>
+                    <div class="flex-1 card rounded-lg p-6 cursor-pointer" onclick="showPersistenceDetail('aof')">
+                        <h3 class="text-xl font-semibold mb-2">AOF Logging</h3>
+                        <p class="text-sm text-gray-600">
+                            Logs every write operation. More durable, less risk of data
+                            loss.
+                        </p>
+                    </div>
+                    <div class="flex-1 card rounded-lg p-6 cursor-pointer" onclick="showPersistenceDetail('hybrid')">
+                        <h3 class="text-xl font-semibold mb-2">Hybrid (RDB + AOF)</h3>
+                        <p class="text-sm text-gray-600">
+                            Best of both worlds. Recommended for high durability.
+                        </p>
+                    </div>
+                </div>
+                <div id="persistence-detail" class="mt-6 bg-white p-6 rounded-lg shadow-inner border border-gray-200"
+                    style="display: none"></div>
+            </div>
+
+            <div>
+                <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">
+                    High Availability & Scalability
+                </h2>
+                <p class="text-center text-gray-600 mb-8">
+                    Redis provides several models to ensure your data is always
+                    available and can scale to meet demand. Explore the three main
+                    architectures below to see how they provide redundancy and
+                    horizontal scaling.
+                </p>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="card p-6 rounded-lg text-center">
+                        <h3 class="text-xl font-semibold mb-3">
+                            Master-Replica Replication
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            A master instance replicates data to one or more replicas.
+                            Provides read scaling and basic failover capability.
+                        </p>
+                        <div class="font-mono text-xs p-4 bg-gray-100 rounded">
+                            Master ↔ Replica(s)
+                        </div>
+                    </div>
+                    <div class="card p-6 rounded-lg text-center">
+                        <h3 class="text-xl font-semibold mb-3">Redis Sentinel</h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            A distributed system that monitors Redis instances and performs
+                            automatic failover if the master becomes unavailable.
+                        </p>
+                        <div class="font-mono text-xs p-4 bg-gray-100 rounded">
+                            Sentinels → Monitor Master/Replicas
+                        </div>
+                    </div>
+                    <div class="card p-6 rounded-lg text-center">
+                        <h3 class="text-xl font-semibold mb-3">Redis Cluster</h3>
+                        <p class="text-gray-600 text-sm mb-4">
+                            Provides horizontal scaling by automatically sharding data
+                            across multiple master nodes, with built-in failover.
+                        </p>
+                        <div class="font-mono text-xs p-4 bg-gray-100 rounded">
+                            Node ↔ Node ↔ Node (Sharded)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="use-cases" class="content-section">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                    Real-World Use Cases
+                </h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">
+                    See how Redis powers some of the most common features in modern
+                    applications, from lightning-fast caches to real-time leaderboards.
+                </p>
+            </div>
+            <div id="use-cases-container" class="space-y-8"></div>
+        </section>
+
+        <section id="implementation" class="content-section">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                    Implementation Guide
+                </h1>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">
+                    A practical guide for developers. This section covers how to
+                    install, configure, and interact with Redis using the command line
+                    and popular client libraries.
+                </p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Interacting with Client Libraries
+                    </h2>
+                    <p class="text-gray-600 mb-6">
+                        Redis has a rich ecosystem of client libraries. Below are examples
+                        for Java and Go, two popular languages in backend development. Use
+                        the tabs to switch between them and see basic operations like
+                        setting data, using transactions, and implementing Pub/Sub.
+                    </p>
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active"
+                                data-tab="java">
+                                Java (Jedis/Lettuce)
+                            </button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                                data-tab="go">
+                                Go (go-redis)
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+                <div id="code-snippets">
+                    <div id="java-tab" class="tab-content active">
+                        <h3 class="text-xl font-semibold mb-2">Java Examples</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Using Jedis, a popular synchronous client.
+                        </p>
+
+                        <h4 class="font-semibold mt-4 mb-2">Connection & Basic Ops</h4>
+                        <div class="code-block">
+                            <pre><code>
+UnifiedJedis jedis = new UnifiedJedis("redis://localhost:6379");
+jedis.set("user:1:name", "Alice");
+String name = jedis.get("user:1:name");
+System.out.println(name); // "Alice"
+jedis.hset("user:1:details", "email", "alice@example.com");
+jedis.close();
+</code></pre>
+                        </div>
+
+                        <h4 class="font-semibold mt-4 mb-2">Transactions (MULTI/EXEC)</h4>
+                        <div class="code-block">
+                            <pre><code>
+Transaction t = jedis.multi();
+t.incr("counter");
+t.expire("counter", 60);
+Response&lt;Long&gt; result = t.exec();
+</code></pre>
+                        </div>
+
+                        <h4 class="font-semibold mt-4 mb-2">Publish/Subscribe</h4>
+                        <div class="code-block">
+                            <pre><code>
+// Subscriber
+jedis.subscribe(new JedisPubSub() {
+    public void onMessage(String channel, String message) {
+        System.out.println("Received: " + message);
+    }
+}, "news_channel");
+
+// Publisher
+publisherJedis.publish("news_channel", "Redis is fast!");
+</code></pre>
+                        </div>
+                    </div>
+                    <div id="go-tab" class="tab-content" style="display: none">
+                        <h3 class="text-xl font-semibold mb-2">Go Examples</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Using go-redis, a high-performance client.
+                        </p>
+
+                        <h4 class="font-semibold mt-4 mb-2">Connection & Basic Ops</h4>
+                        <div class="code-block">
+                            <pre><code>
+ctx := context.Background()
+rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+err := rdb.Set(ctx, "user:1:name", "Bob", 0).Err()
+val, err := rdb.Get(ctx, "user:1:name").Result()
+fmt.Println("name", val) // "name Bob"
+</code></pre>
+                        </div>
+
+                        <h4 class="font-semibold mt-4 mb-2">Transactions (TxPipeline)</h4>
+                        <div class="code-block">
+                            <pre><code>
+pipe := rdb.TxPipeline()
+pipe.Incr(ctx, "counter")
+pipe.Expire(ctx, "counter", time.Hour)
+_, err := pipe.Exec(ctx)
+</code></pre>
+                        </div>
+
+                        <h4 class="font-semibold mt-4 mb-2">Publish/Subscribe</h4>
+                        <div class="code-block">
+                            <pre><code>
+// Subscriber
+pubsub := rdb.Subscribe(ctx, "news_channel")
+msg, err := pubsub.ReceiveMessage(ctx)
+fmt.Println(msg.Channel, msg.Payload)
+
+// Publisher
+rdb.Publish(ctx, "news_channel", "Hello from Go!")
+</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>Interactive Redis Report | Generated by an AI Assistant</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const app = {
+                activeSection: "overview",
+                navLinks: document.querySelectorAll(".nav-link"),
+                sections: document.querySelectorAll(".content-section"),
+                dbComparisonChart: null,
+
+                data: {
+                    dataStructures: [
+                        {
+                            name: "Strings",
+                            icon: "📝",
+                            description:
+                                "The most basic Redis type. Can hold any kind of data, like a string, integer, or even a JPEG image.",
+                            useCases: "Caching HTML, counters, session data.",
+                            commands: "`SET`, `GET`, `INCR`, `APPEND`",
+                        },
+                        {
+                            name: "Lists",
+                            icon: "📋",
+                            description:
+                                "A collection of string elements sorted according to the order of insertion. Implemented as Linked Lists.",
+                            useCases: "Queues, stacks, activity feeds.",
+                            commands: "`LPUSH`, `RPOP`, `LRANGE`, `BLPOP`",
+                        },
+                        {
+                            name: "Sets",
+                            icon: "🗂️",
+                            description:
+                                "An unordered collection of unique strings. Highly efficient for membership tests.",
+                            useCases: "Tracking unique items (tags, IPs), relations.",
+                            commands: "`SADD`, `SISMEMBER`, `SINTER`",
+                        },
+                        {
+                            name: "Sorted Sets",
+                            icon: "🏆",
+                            description:
+                                "Like Sets, but each member is associated with a score, used for ordering.",
+                            useCases: "Leaderboards, priority queues, rate limiters.",
+                            commands: "`ZADD`, `ZRANGE`, `ZRANK`",
+                        },
+                        {
+                            name: "Hashes",
+                            icon: "📦",
+                            description:
+                                "Maps between string fields and string values. Perfect for representing objects.",
+                            useCases: "User profiles, product catalogs.",
+                            commands: "`HSET`, `HGET`, `HGETALL`",
+                        },
+                        {
+                            name: "Streams",
+                            icon: "🌊",
+                            description:
+                                "An append-only log data structure, ideal for messaging and event sourcing.",
+                            useCases: "Event sourcing, sensor data, notifications.",
+                            commands: "`XADD`, `XREAD`, `XGROUP`",
+                        },
+                    ],
+                    persistenceDetails: {
+                        rdb: {
+                            title: "RDB (Redis Database) Details",
+                            content:
+                                "RDB creates point-in-time snapshots of your dataset. It's very fast for restarts and great for backups. However, you might lose the last few minutes of data if Redis crashes unexpectedly. Choose RDB when a small amount of data loss is acceptable and you prioritize performance and fast disaster recovery.",
+                        },
+                        aof: {
+                            title: "AOF (Append Only File) Details",
+                            content:
+                                "AOF logs every single write operation. This provides much better durability, typically losing at most one second of data. The file can become large, but Redis can rewrite it in the background. Choose AOF when data durability is your primary concern.",
+                        },
+                        hybrid: {
+                            title: "Hybrid (RDB + AOF) Details",
+                            content:
+                                "This is the most durable option and is generally recommended for production. Redis uses the AOF for durability on restart, but can also use the RDB file for faster rewrites and backups. It provides the best combination of data safety and operational convenience.",
+                        },
+                    },
+                    useCases: [
+                        {
+                            title: "Caching Layer",
+                            problem:
+                                "Reducing database load and speeding up content delivery.",
+                            solution:
+                                "Store frequently accessed data like query results or rendered pages in Redis.",
+                            components: "Strings, Hashes, LRU Eviction Policy, TTLs.",
+                            benefits:
+                                "Dramatically improved response times and higher throughput.",
+                        },
+                        {
+                            title: "Real-time Leaderboards",
+                            problem:
+                                "Instantly updating and retrieving rankings for millions of users.",
+                            solution:
+                                "Use Sorted Sets to maintain ordered lists of players or items by score.",
+                            components: "Sorted Sets (`ZADD`, `ZINCRBY`, `ZRANGE`).",
+                            benefits:
+                                "Sub-millisecond ranking updates and massive scalability.",
+                        },
+                        {
+                            title: "Message Queues",
+                            problem: "Decoupling services and managing background jobs.",
+                            solution:
+                                "Use Lists for simple queues or Streams for more robust, persistent messaging.",
+                            components: "Lists (`LPUSH`/`BRPOP`), Streams, Pub/Sub.",
+                            benefits:
+                                "Enables event-driven architectures and improves application responsiveness.",
+                        },
+                        {
+                            title: "Session Management",
+                            problem: "Storing user sessions in a scalable and fast way.",
+                            solution:
+                                "Store session tokens and user data in Redis with an automatic expiration time.",
+                            components: "Strings, Hashes, TTLs.",
+                            benefits:
+                                "Fast, distributed session handling that scales across servers.",
+                        },
+                    ],
+                },
+
+                init() {
+                    this.setupNav();
+                    this.createDbComparisonChart();
+                    this.renderDataStructures();
+                    this.renderUseCases();
+                    this.setupTabs();
+                },
+
+                setupNav() {
+                    this.navLinks.forEach((link) => {
+                        link.addEventListener("click", (e) => {
+                            e.preventDefault();
+                            const sectionId = link.getAttribute("href").substring(1);
+                            this.showSection(sectionId);
+                        });
+                    });
+                },
+
+                showSection(id) {
+                    this.activeSection = id;
+                    this.sections.forEach((section) => {
+                        if (section.id === id) {
+                            section.classList.add("active");
+                        } else {
+                            section.classList.remove("active");
+                        }
+                    });
+                    this.navLinks.forEach((link) => {
+                        if (link.getAttribute("href") === `#${id}`) {
+                            link.classList.add("active");
+                        } else {
+                            link.classList.remove("active");
+                        }
+                    });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                },
+
+                createDbComparisonChart() {
+                    const ctx = document
+                        .getElementById("dbComparisonChart")
+                        .getContext("2d");
+                    this.dbComparisonChart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: [
+                                "Performance (Latency)",
+                                "Data Model",
+                                "Scalability",
+                                "Query Complexity",
+                                "Consistency",
+                            ],
+                            datasets: [
+                                {
+                                    label: "Redis",
+                                    data: [9, 7, 8, 3, 6],
+                                    backgroundColor: "rgba(199, 125, 60, 0.7)",
+                                    borderColor: "rgba(199, 125, 60, 1)",
+                                    borderWidth: 1,
+                                },
+                                {
+                                    label: "RDBMS",
+                                    data: [3, 4, 5, 9, 9],
+                                    backgroundColor: "rgba(64, 58, 58, 0.5)",
+                                    borderColor: "rgba(64, 58, 58, 0.8)",
+                                    borderWidth: 1,
+                                },
+                                {
+                                    label: "NoSQL (Doc)",
+                                    data: [5, 9, 7, 7, 5],
+                                    backgroundColor: "rgba(130, 117, 107, 0.5)",
+                                    borderColor: "rgba(130, 117, 107, 0.8)",
+                                    borderWidth: 1,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 10,
+                                    grid: {
+                                        color: "#EAE2D9",
+                                    },
+                                },
+                                x: {
+                                    grid: {
+                                        display: false,
+                                    },
+                                },
+                            },
+                            plugins: {
+                                legend: {
+                                    position: "top",
+                                },
+                                title: {
+                                    display: false,
+                                    text: "Database Characteristics Comparison (Qualitative Score)",
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            let label = context.dataset.label || "";
+                                            if (label) {
+                                                label += ": ";
+                                            }
+                                            const val = context.parsed.y;
+                                            const category = context.label;
+                                            let desc = "";
+                                            if (category === "Performance (Latency)")
+                                                desc =
+                                                    val > 7
+                                                        ? "Very Low (Sub-ms)"
+                                                        : val > 4
+                                                            ? "Low"
+                                                            : "High";
+                                            if (category === "Data Model")
+                                                desc =
+                                                    val > 7
+                                                        ? "Flexible (Doc/Graph)"
+                                                        : val > 5
+                                                            ? "Rich Structures"
+                                                            : "Rigid (Tables)";
+                                            if (category === "Scalability")
+                                                desc =
+                                                    val > 7
+                                                        ? "High (Native Sharding)"
+                                                        : val > 5
+                                                            ? "Medium (Replication)"
+                                                            : "Complex";
+                                            if (category === "Query Complexity")
+                                                desc =
+                                                    val > 7
+                                                        ? "High (SQL/Aggregation)"
+                                                        : val > 4
+                                                            ? "Medium"
+                                                            : "Low (Key-based)";
+                                            if (category === "Consistency")
+                                                desc =
+                                                    val > 7
+                                                        ? "Strong (ACID)"
+                                                        : val > 5
+                                                            ? "Configurable"
+                                                            : "Eventual";
+                                            return `${label} ${desc}`;
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    });
+                },
+
+                renderDataStructures() {
+                    const grid = document.getElementById("data-structures-grid");
+                    grid.innerHTML = this.data.dataStructures
+                        .map(
+                            (ds) => `
+                        <div class="card rounded-lg p-6 cursor-pointer" onclick="this.querySelector('.details').classList.toggle('hidden')">
+                            <div class="flex items-center mb-3">
+                                <span class="text-3xl mr-4">${ds.icon}</span>
+                                <h3 class="text-xl font-semibold text-gray-800">${ds.name}</h3>
+                            </div>
+                            <p class="text-gray-600">${ds.description}</p>
+                            <div class="details hidden mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-sm font-semibold text-gray-700">Use Cases:</p>
+                                <p class="text-sm text-gray-600 mb-2">${ds.useCases}</p>
+                                <p class="text-sm font-semibold text-gray-700">Common Commands:</p>
+                                <div class="font-mono text-xs p-2 bg-gray-100 rounded">${ds.commands}</div>
+                            </div>
+                        </div>
+                    `
+                        )
+                        .join("");
+                },
+
+                renderUseCases() {
+                    const container = document.getElementById("use-cases-container");
+                    container.innerHTML = this.data.useCases
+                        .map(
+                            (uc) => `
+                        <div class="card rounded-lg p-8">
+                            <h3 class="text-2xl font-bold mb-3 text-gray-800">${uc.title}</h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-gray-700">Problem</h4>
+                                    <p class="text-gray-600">${uc.problem}</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-700">Solution with Redis</h4>
+                                    <p class="text-gray-600">${uc.solution}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-sm"><strong class="font-semibold">Key Components:</strong> <span class="font-mono text-xs bg-gray-100 p-1 rounded">${uc.components}</span></p>
+                                <p class="text-sm mt-2"><strong class="font-semibold">Benefits:</strong> ${uc.benefits}</p>
+                            </div>
+                        </div>
+                    `
+                        )
+                        .join("");
+                },
+
+                setupTabs() {
+                    const tabContainer = document.getElementById("code-snippets");
+                    if (!tabContainer) return;
+
+                    const tabButtons = tabContainer.querySelectorAll(".tab-btn");
+                    const tabContents = tabContainer.querySelectorAll(".tab-content");
+
+                    tabButtons.forEach((button) => {
+                        button.addEventListener("click", () => {
+                            const tabId = button.dataset.tab;
+
+                            tabButtons.forEach((btn) => btn.classList.remove("active"));
+                            button.classList.add("active");
+
+                            tabContents.forEach((content) => {
+                                if (content.id === `${tabId}-tab`) {
+                                    content.style.display = "block";
+                                } else {
+                                    content.style.display = "none";
+                                }
+                            });
+                        });
+                    });
+                },
+            };
+
+            window.showPersistenceDetail = (type) => {
+                const detailEl = document.getElementById("persistence-detail");
+                const detailData = app.data.persistenceDetails[type];
+                detailEl.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2">${detailData.title}</h4>
+                    <p class="text-gray-700">${detailData.content}</p>
+                `;
+                detailEl.style.display = "block";
+            };
+
+            app.init();
+        });
+    </script>
+</body>
+
+</html>
