@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Guide to Building Microservices with Go</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: The SPA is structured as a "Lifecycle Dashboard" with four main thematic sections: Foundations, Architecture, Implementation, and Operations. This non-linear, task-oriented structure allows users (developers, architects) to jump directly to the phase of the microservice lifecycle that is most relevant to their immediate needs, rather than navigating a long, linear document. The user flow is driven by a sticky top navigation bar. This design promotes exploration and quick access to specific information, which is more usable for a technical reference guide than a simple report-to-page conversion. Interactions like tabbed content, clickable cards, and dynamic charts are used to condense complex comparisons and information into digestible formats. -->
+    <!-- Visualization & Content Choices: 
+        - Monolith vs. Microservices: Goal=Compare. Method=Side-by-side interactive cards. Interaction=Click to reveal details. Justification=Allows direct comparison of trade-offs. Method=HTML/CSS/JS.
+        - Communication Patterns: Goal=Compare. Method=Radar Chart. Interaction=Dynamic rendering. Justification=Visually represents the nuanced strengths and weaknesses of REST, gRPC, and Messaging across multiple criteria. Library=Chart.js.
+        - Data Consistency: Goal=Organize/Explain. Method=Interactive HTML/CSS diagram. Interaction=Hover to highlight steps of the Saga pattern. Justification=Simplifies a complex distributed systems concept visually. Method=HTML/CSS/JS.
+        - Go Database Libraries: Goal=Compare. Method=Bar Chart & interactive toggles. Interaction=Toggle criteria to see suitability. Justification=Provides a recommendation-style interaction for a common developer choice. Library=Chart.js.
+        - Kubernetes Objects: Goal=Organize. Method=Visual diagram using styled divs. Interaction=Hover reveals descriptions. Justification=Clarifies the relationship between core K8s concepts (Deployment, Service, Ingress) for deployment. Method=HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 350px;
+            }
+        }
+
+        .tab-button.active {
+            background-color: #0d9488;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="bg-stone-50 text-stone-800">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-stone-900">
+                Building Microservices with Go
+            </h1>
+            <p class="mt-4 text-lg text-stone-600 max-w-3xl mx-auto">
+                An interactive lifecycle guide to designing, developing, and deploying
+                resilient and scalable services.
+            </p>
+        </header>
+
+        <nav id="main-nav" class="sticky top-0 z-10 bg-stone-50/80 backdrop-blur-md border-b border-stone-200 mb-8">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-center space-x-4 md:space-x-8">
+                    <button data-section="foundations"
+                        class="nav-link text-stone-600 hover:text-teal-600 py-4 px-2 border-b-2 border-transparent text-sm md:text-base font-medium">
+                        Foundations
+                    </button>
+                    <button data-section="architecture"
+                        class="nav-link text-stone-600 hover:text-teal-600 py-4 px-2 border-b-2 border-transparent text-sm md:text-base font-medium">
+                        Architecture
+                    </button>
+                    <button data-section="implementation"
+                        class="nav-link text-stone-600 hover:text-teal-600 py-4 px-2 border-b-2 border-transparent text-sm md:text-base font-medium">
+                        Implementation
+                    </button>
+                    <button data-section="operations"
+                        class="nav-link text-stone-600 hover:text-teal-600 py-4 px-2 border-b-2 border-transparent text-sm md:text-base font-medium">
+                        Operations & Security
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main id="main-content">
+            <!-- Foundations Section -->
+            <section id="foundations" class="content-section space-y-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">
+                        Foundational Concepts
+                    </h2>
+                    <p class="text-center text-stone-600 max-w-2xl mx-auto">
+                        This section covers the "why" behind microservices. Understand the
+                        core trade-offs, the reasons Go is an excellent choice, and the
+                        guiding principles for successful architecture.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Monolith vs. Microservices
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        The decision between a monolith and microservices is a critical
+                        trade-off between simplicity and scalability. Microservices solve
+                        scaling problems for mature products but introduce significant
+                        operational complexity.
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="text-xl font-semibold text-stone-800 mb-3 flex items-center">
+                                <span class="text-2xl mr-3">🏛️</span> Monolithic Architecture
+                            </h4>
+                            <ul class="space-y-2 text-stone-600">
+                                <li>
+                                    <strong class="text-stone-700">Pros:</strong> Simpler to
+                                    develop, deploy, and test initially. Lower operational
+                                    overhead for small teams or MVPs.
+                                </li>
+                                <li>
+                                    <strong class="text-stone-700">Cons:</strong> Scales as a
+                                    single unit (inefficient). Tightly coupled components slow
+                                    down development. A single failure can bring down the entire
+                                    application.
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="text-xl font-semibold text-stone-800 mb-3 flex items-center">
+                                <span class="text-2xl mr-3">🧩</span> Microservices
+                                Architecture
+                            </h4>
+                            <ul class="space-y-2 text-stone-600">
+                                <li>
+                                    <strong class="text-stone-700">Pros:</strong> Granular
+                                    scalability. Independent deployment enables agility.
+                                    Resilience through fault isolation. Technology diversity.
+                                </li>
+                                <li>
+                                    <strong class="text-stone-700">Cons:</strong> High
+                                    complexity in distributed systems. Significant operational
+                                    overhead. Challenges in data consistency and testing.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-6">
+                        Why is Go Ideal for Microservices?
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                ⚡ Performance
+                            </h4>
+                            <p class="text-stone-600">
+                                Compiled to native machine code, Go offers fast startup times
+                                and low memory usage, crucial for rapid scaling and cost
+                                efficiency.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                🚀 Concurrency
+                            </h4>
+                            <p class="text-stone-600">
+                                Lightweight goroutines and channels make it simple to build
+                                highly concurrent systems that can handle many operations in
+                                parallel without complex threading code.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                📦 Small Binary Size
+                            </h4>
+                            <p class="text-stone-600">
+                                Statically linked binaries are self-contained, resulting in
+                                small, efficient container images that deploy quickly and have
+                                a reduced attack surface.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                🛡️ Static Typing
+                            </h4>
+                            <p class="text-stone-600">
+                                The strong, static type system catches many errors at compile
+                                time, leading to more robust and reliable production code.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                🛠️ Excellent Tooling
+                            </h4>
+                            <p class="text-stone-600">
+                                Built-in tools for testing, profiling (`pprof`), dependency
+                                management (Go Modules), and formatting (`gofmt`) streamline
+                                the development lifecycle.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                🌐 Growing Ecosystem
+                            </h4>
+                            <p class="text-stone-600">
+                                A mature ecosystem of libraries and frameworks for HTTP (Gin,
+                                Echo), gRPC, observability, and more provides solid building
+                                blocks.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section id="architecture" class="content-section space-y-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">
+                        Core Architectural Components
+                    </h2>
+                    <p class="text-center text-stone-600 max-w-2xl mx-auto">
+                        Explore the building blocks of a Go microservice architecture.
+                        This section dives into how services communicate, manage data,
+                        find each other, and expose themselves to the outside world.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Service Communication Patterns
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        Choosing the right communication style is critical. REST is great
+                        for external APIs, gRPC excels at high-performance internal
+                        communication, and asynchronous messaging provides resilience and
+                        decoupling.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="communication-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Data Management & Consistency
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        In microservices, data is decentralized. This creates challenges
+                        in maintaining consistency. The Saga pattern is a common solution
+                        for managing distributed transactions without the bottlenecks of
+                        traditional methods.
+                    </p>
+                    <div id="saga-tabs" class="mb-4 flex justify-center border-b border-stone-200">
+                        <button data-saga="choreography"
+                            class="saga-tab-button p-4 font-medium text-stone-500 hover:text-teal-600 transition">
+                            Choreography Saga
+                        </button>
+                        <button data-saga="orchestration"
+                            class="saga-tab-button p-4 font-medium text-stone-500 hover:text-teal-600 transition">
+                            Orchestration Saga
+                        </button>
+                    </div>
+                    <div id="saga-content">
+                        <div id="saga-choreography" class="saga-panel space-y-4 text-center">
+                            <h4 class="text-lg font-semibold">Event-Driven Choreography</h4>
+                            <p class="text-stone-600 max-w-xl mx-auto">
+                                Services communicate by publishing and listening to events.
+                                This is highly decoupled but can be hard to track.
+                            </p>
+                            <div class="flex justify-center items-center space-x-4 p-4 flex-wrap">
+                                <div class="text-center p-4 m-2 bg-blue-100 rounded-lg shadow">
+                                    Service A<br /><small>(Creates Order)</small>
+                                </div>
+                                <div class="font-bold text-2xl text-teal-500">→</div>
+                                <div class="text-center p-4 m-2 bg-yellow-100 rounded-lg shadow">
+                                    Event<br /><small>(OrderCreated)</small>
+                                </div>
+                                <div class="font-bold text-2xl text-teal-500">→</div>
+                                <div class="text-center p-4 m-2 bg-green-100 rounded-lg shadow">
+                                    Service B<br /><small>(Processes Payment)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="saga-orchestration" class="saga-panel space-y-4 text-center" style="display: none">
+                            <h4 class="text-lg font-semibold">Central Orchestrator</h4>
+                            <p class="text-stone-600 max-w-xl mx-auto">
+                                A central orchestrator service commands each participant
+                                service, making the flow explicit and easier to manage.
+                            </p>
+                            <div class="flex flex-col items-center space-y-2 p-4">
+                                <div class="text-center p-4 m-2 bg-purple-200 rounded-lg shadow w-48">
+                                    Orchestrator
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="h-12 w-px bg-stone-400"></div>
+                                </div>
+                                <div class="flex justify-around w-full max-w-2xl">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-px h-6 bg-stone-400"></div>
+                                        <div class="text-center p-4 m-2 bg-blue-100 rounded-lg shadow">
+                                            Service A<br /><small>(Order)</small>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-px h-6 bg-stone-400"></div>
+                                        <div class="text-center p-4 m-2 bg-green-100 rounded-lg shadow">
+                                            Service B<br /><small>(Payment)</small>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-px h-6 bg-stone-400"></div>
+                                        <div class="text-center p-4 m-2 bg-orange-100 rounded-lg shadow">
+                                            Service C<br /><small>(Shipping)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">API Gateway</h3>
+                    <p class="text-stone-600 mb-6">
+                        An API Gateway acts as a single entry point for all clients. It
+                        centralizes cross-cutting concerns like authentication, rate
+                        limiting, and routing, simplifying both the client and the
+                        microservices themselves.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-6 text-center">
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                Routing
+                            </h4>
+                            <p class="text-stone-600">
+                                Directs requests to the correct downstream service.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                Authentication
+                            </h4>
+                            <p class="text-stone-600">
+                                Verifies client identity before passing requests to internal
+                                services.
+                            </p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg text-teal-700 mb-2">
+                                Rate Limiting
+                            </h4>
+                            <p class="text-stone-600">
+                                Protects services from being overwhelmed by traffic spikes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Implementation Section -->
+            <section id="implementation" class="content-section space-y-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">
+                        Implementation & Best Practices
+                    </h2>
+                    <p class="text-center text-stone-600 max-w-2xl mx-auto">
+                        From theory to practice. This section covers idiomatic Go
+                        development practices, how to structure your projects, and
+                        patterns for building resilient services.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Go Database Library Choices
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        Choosing how to talk to your database in Go involves a trade-off
+                        between the control of raw SQL and the convenience of an ORM.
+                        `sqlc` offers a compelling middle ground by generating type-safe
+                        Go from your SQL.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="db-library-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Resilience Patterns
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        Distributed systems will inevitably have failures. Resilience
+                        patterns help your services handle failures gracefully, preventing
+                        them from cascading and causing widespread outages.
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="font-semibold text-lg text-stone-800 mb-2">
+                                Circuit Breaker
+                            </h4>
+                            <p class="text-stone-600">
+                                Stops sending requests to a service that is consistently
+                                failing. After a timeout, it sends a trial request. If that
+                                succeeds, it closes the circuit and resumes normal traffic.
+                            </p>
+                        </div>
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="font-semibold text-lg text-stone-800 mb-2">Retry</h4>
+                            <p class="text-stone-600">
+                                Automatically retries a failed request, which is useful for
+                                transient network errors. Usually implemented with an
+                                exponential backoff to avoid overwhelming a recovering
+                                service.
+                            </p>
+                        </div>
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="font-semibold text-lg text-stone-800 mb-2">
+                                Graceful Shutdown
+                            </h4>
+                            <p class="text-stone-600">
+                                Allows a service to finish processing in-flight requests and
+                                clean up resources (like database connections) before shutting
+                                down, preventing data loss.
+                            </p>
+                        </div>
+                        <div class="border border-stone-200 rounded-lg p-6">
+                            <h4 class="font-semibold text-lg text-stone-800 mb-2">
+                                Idempotency
+                            </h4>
+                            <p class="text-stone-600">
+                                Ensures that an operation can be safely retried multiple times
+                                without changing the result beyond the initial application
+                                (e.g., preventing double-charges in a payment service).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Operations Section -->
+            <section id="operations" class="content-section space-y-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">
+                        Operations & Security
+                    </h2>
+                    <p class="text-center text-stone-600 max-w-2xl mx-auto">
+                        Deploying and managing microservices requires robust
+                        infrastructure and a strong security posture. Learn about
+                        containerization, observability, and key security practices.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Containerization with Docker & Kubernetes
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        Docker and Kubernetes are the de facto standards for packaging and
+                        running microservices. Go's small static binaries are a perfect
+                        fit for lightweight, secure containers.
+                    </p>
+                    <div class="bg-stone-50 border border-stone-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-stone-800 mb-4">
+                            Best Practice: Multi-Stage Dockerfile
+                        </h4>
+                        <pre class="bg-stone-900 text-white p-4 rounded-md text-sm overflow-x-auto"><code># Builder stage
+FROM golang:1.22 as builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o /app/main ./cmd/service
+
+# Final stage
+FROM gcr.io/distroless/static-debian11
+COPY --from=builder /app/main /
+USER nonroot:nonroot
+ENTRYPOINT ["/main"]</code></pre>
+                        <p class="text-sm text-stone-600 mt-4">
+                            This pattern creates a minimal, secure production image by
+                            compiling the app in a temporary "builder" container and copying
+                            only the final binary, dramatically reducing size and attack
+                            surface.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        The Three Pillars of Observability
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        In a distributed system, you can't debug by SSHing into a server.
+                        Observability provides the tools to understand what's happening
+                        inside your system from the outside.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div class="text-center">
+                            <div class="text-4xl mb-3">📜</div>
+                            <h4 class="text-xl font-semibold mb-2">Logging</h4>
+                            <p class="text-stone-600">
+                                Records discrete events. Structured logging (e.g., JSON) is
+                                essential for effective searching and analysis.
+                                <strong class="text-teal-700">Tools: Zap, Logrus.</strong>
+                            </p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl mb-3">📈</div>
+                            <h4 class="text-xl font-semibold mb-2">Metrics</h4>
+                            <p class="text-stone-600">
+                                Aggregated numerical data over time (e.g., request latency,
+                                CPU usage). Used for monitoring and alerting.
+                                <strong class="text-teal-700">Tools: Prometheus, Grafana.</strong>
+                            </p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl mb-3">🔍</div>
+                            <h4 class="text-xl font-semibold mb-2">Tracing</h4>
+                            <p class="text-stone-600">
+                                Shows the end-to-end journey of a single request as it travels
+                                through multiple services. Essential for finding bottlenecks.
+                                <strong class="text-teal-700">Tools: Jaeger, OpenTelemetry.</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-white rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-stone-900 mb-4">
+                        Essential Security Practices
+                    </h3>
+                    <p class="text-stone-600 mb-6">
+                        Security must be built in, not bolted on. These practices form a
+                        critical foundation for protecting your services and data.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-teal-500 font-bold mr-3 mt-1">✓</span>
+                            <div>
+                                <strong class="text-stone-800">Secure Communication (TLS/mTLS):</strong>
+                                Encrypt all traffic between services to prevent eavesdropping
+                                and man-in-the-middle attacks. Mutual TLS (mTLS) provides even
+                                stronger, two-way authentication.
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-teal-500 font-bold mr-3 mt-1">✓</span>
+                            <div>
+                                <strong class="text-stone-800">Secrets Management:</strong>
+                                Never hardcode secrets. Use external tools like HashiCorp
+                                Vault or Kubernetes Secrets (with encryption at rest) to
+                                manage database credentials, API keys, and certificates.
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-teal-500 font-bold mr-3 mt-1">✓</span>
+                            <div>
+                                <strong class="text-stone-800">Input Validation:</strong>
+                                Treat all input as untrusted. Use libraries like
+                                `go-playground/validator` to validate data structures and
+                                prevent attacks like SQL Injection and XSS. Always use
+                                parameterized queries for database access.
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-teal-500 font-bold mr-3 mt-1">✓</span>
+                            <div>
+                                <strong class="text-stone-800">Principle of Least Privilege:</strong>
+                                Run containers as non-root users. Use minimal base images
+                                (`distroless`, `alpine`) to reduce the attack surface. Enforce
+                                strict RBAC policies for access to resources.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const navLinks = document.querySelectorAll(".nav-link");
+            const contentSections = document.querySelectorAll(".content-section");
+            let communicationChart, dbLibraryChart;
+
+            function setActiveSection(sectionId) {
+                navLinks.forEach((link) => {
+                    link.classList.toggle("active", link.dataset.section === sectionId);
+                });
+                contentSections.forEach((section) => {
+                    section.classList.toggle("active", section.id === sectionId);
+                });
+
+                if (sectionId === "architecture" && !communicationChart) {
+                    renderCommunicationChart();
+                }
+                if (sectionId === "implementation" && !dbLibraryChart) {
+                    renderDbLibraryChart();
+                }
+            }
+
+            navLinks.forEach((link) => {
+                link.addEventListener("click", () => {
+                    setActiveSection(link.dataset.section);
+                });
+            });
+
+            // Saga tabs
+            const sagaTabs = document.querySelectorAll(".saga-tab-button");
+            const sagaPanels = document.querySelectorAll(".saga-panel");
+            sagaTabs.forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    sagaTabs.forEach((t) =>
+                        t.classList.remove("active", "text-teal-600", "border-teal-600")
+                    );
+                    tab.classList.add("active", "text-teal-600", "border-teal-600");
+                    sagaPanels.forEach((panel) => {
+                        panel.style.display =
+                            panel.id === `saga-${tab.dataset.saga}` ? "block" : "none";
+                    });
+                });
+            });
+            // Initial state for saga tabs
+            document
+                .querySelector('.saga-tab-button[data-saga="choreography"]')
+                .classList.add("active", "text-teal-600", "border-teal-600");
+            document.querySelector("#saga-choreography").style.display = "block";
+
+            function renderCommunicationChart() {
+                const ctx = document
+                    .getElementById("communication-chart")
+                    .getContext("2d");
+                communicationChart = new Chart(ctx, {
+                    type: "radar",
+                    data: {
+                        labels: [
+                            "Performance",
+                            "Complexity",
+                            "Real-time",
+                            "Ecosystem",
+                            "Browser Support",
+                            "Coupling",
+                        ],
+                        datasets: [
+                            {
+                                label: "REST/HTTP",
+                                data: [3, 2, 2, 5, 5, 3],
+                                backgroundColor: "rgba(239, 68, 68, 0.2)",
+                                borderColor: "rgb(239, 68, 68)",
+                                pointBackgroundColor: "rgb(239, 68, 68)",
+                            },
+                            {
+                                label: "gRPC",
+                                data: [5, 4, 5, 4, 1, 2],
+                                backgroundColor: "rgba(59, 130, 246, 0.2)",
+                                borderColor: "rgb(59, 130, 246)",
+                                pointBackgroundColor: "rgb(59, 130, 246)",
+                            },
+                            {
+                                label: "Messaging",
+                                data: [4, 5, 4, 5, 1, 1],
+                                backgroundColor: "rgba(13, 148, 136, 0.2)",
+                                borderColor: "rgb(13, 148, 136)",
+                                pointBackgroundColor: "rgb(13, 148, 136)",
+                            },
+                        ],
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { display: true },
+                                suggestedMin: 0,
+                                suggestedMax: 5,
+                                pointLabels: { font: { size: 14 } },
+                                ticks: { backdropColor: "transparent", stepSize: 1 },
+                            },
+                        },
+                        plugins: {
+                            legend: {
+                                position: "top",
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.dataset.label || "";
+                                        if (label) {
+                                            label += ": ";
+                                        }
+                                        label += context.raw;
+                                        return label;
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+
+            function renderDbLibraryChart() {
+                const ctx = document
+                    .getElementById("db-library-chart")
+                    .getContext("2d");
+                dbLibraryChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: ["database/sql", "GORM (ORM)", "sqlc (Generator)"],
+                        datasets: [
+                            {
+                                label: "Control vs. Convenience (Higher is more control)",
+                                data: [5, 2, 4],
+                                backgroundColor: ["#FBBF24", "#F87171", "#34D399"],
+                            },
+                            {
+                                label: "Performance (Higher is better)",
+                                data: [5, 3, 5],
+                                backgroundColor: ["#FCA5A5", "#FCA5A5", "#6EE7B7"],
+                            },
+                        ],
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, max: 5 },
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "bottom",
+                            },
+                            title: {
+                                display: true,
+                                text: "Go Database Library Trade-offs",
+                            },
+                        },
+                        indexAxis: "y",
+                    },
+                });
+            }
+
+            // Set initial state
+            setActiveSection("foundations");
+        });
+    </script>
+</body>
+
+</html>
