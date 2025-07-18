@@ -7,15 +7,17 @@
 **Định nghĩa**: Context Diagram là sự thể hiện sự tương tác giữa các actor (hình vuông) tương tác với hệ thống của chúng ta (hình tròn) thông qua các mũi tên thể hiện sự ra vào của dữ liệu (data must be a noun!!! ⛔)
 ![Context Diagram](./images/context-diagram.png)
 
+
+
 ---
 
 #### Use Case Diagram 🍄
 
 **Định nghĩa**: Model the stakeholders of a system as well as the goals they want to achieve through interacting with the system.
-Quy tắt đọc
+Quy tắt đọc: khi nói đến mối quan hệ include or extend thì chúng ta sẽ có 1 thằng use case là ==base==
 
-- Include: đọc từ gốc mũi tên, **ví dụ** thằng Manage meal Subscription là thằng chính còn login là thằng phụ
-- Extend: đọc thằng chính ở ngọn, **ví dụ** view menu là thằng chính còn order a meal là thằng phụ
+- Include: Ví dụ ta có ăn cơm (base)--include--> thanh toán. Thì ở mối quan hện này khi ăn cơm xảy ra thì thanh toán sẽ chắc chắn xảy ra không quan trọng thứ tự thực hiện, như ta có thể thanh toán tiền rồi ăn cơm hoặc là ăn cơm rồi mới thanh toán tiền. Trong trường hợp của include thì cái base là phía không có mũi tên
+- Extend: Ví dụ ta có ăn cơm (base) <--extend-- ăn cơm thêm. Thì trong trường hợp này ăn cơm thêm có thể có hoặc không và mũi tên phải chỉ về hướng base use case.
 
 **Use Case Diagram's Components**
 - **Use Case** is a function that users can do to achieve something in the system
