@@ -17,6 +17,15 @@ Quy tắt đọc
 - Include: đọc từ gốc mũi tên, **ví dụ** thằng Manage meal Subscription là thằng chính còn login là thằng phụ
 - Extend: đọc thằng chính ở ngọn, **ví dụ** view menu là thằng chính còn order a meal là thằng phụ
 
+**Use Case Diagram's Components**
+- **Use Case** is a function that users can do to achieve something in the system
+- **Association** is a interaction with use case, like who uses what functions or use cases
+- **Actor**: roles --> can be draw with rectangle
+- **System** defines the system boundary
+- **Include** relates to the included use case to indicate inserted behavior
+- **Extend** is a relationship between two use cases in which one is a variation of another
+
+
 ![alt text](./images/usecase-diagram.png)
 
 Use case diagram symbols and notation
