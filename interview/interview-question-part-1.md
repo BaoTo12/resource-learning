@@ -1,43 +1,50 @@
-# Database and Software Engineering Concepts Guide
-
 ## 1. Composite Key vs Surrogate Key
 
 ### Understanding the Choice
+
 When designing many-to-many relationships, you face a fundamental decision between using composite keys or surrogate keys. This choice affects both performance and future flexibility.
 
 ### Composite Key Approach
+
 A composite key combines multiple columns to create a unique identifier. In many-to-many relationships, this typically means using foreign keys from both related tables as the primary key.
 
 **Performance Characteristics:**
+
 - Creates a clustered index on the composite key by default
 - Database physically arranges data on disk based on this key structure
 - Uses B-Tree data structure for efficient range queries
 - Lookup operations can narrow results more efficiently through the tree structure
 
 ### Surrogate Key Approach
+
 A surrogate key is a generated identifier (like an auto-incrementing integer) that serves as the primary key when natural keys aren't suitable.
 
 **Performance Characteristics:**
+
 - Requires a separate unique constraint on the foreign key combination
 - Creates a non-clustered index on the foreign keys
 - Database engine must perform additional lookups: first find matching rows in the index, then retrieve actual data
 - Generally involves more I/O operations for queries
 
 ### Future Evolution Considerations
+
 Surrogate keys provide cleaner abstraction for future changes. If you later need to add a third table (like "assignment_course"), surrogate keys make relationships more explicit and manageable.
 
 ## 2. Fail-Fast vs Fail-Safe Iterators in Java
 
 ### System Design Philosophy
+
 Understanding fail-fast and fail-safe approaches helps you design more robust systems.
 
 **Fail-Fast Systems:**
+
 - Immediately stop operation when errors occur
 - Expose errors right away to prevent further damage
 - Maintain system integrity through proactive fault handling
 - Prioritize correctness over availability
 
 **Fail-Safe Systems:**
+
 - Continue operating despite errors
 - Provide uninterrupted service by hiding faults from users
 - May attempt error recovery while maintaining operation
@@ -56,12 +63,15 @@ Fail-safe iterators operate on a cloned copy of the collection. This approach en
 ## 3. Transaction Annotations: Jakarta vs Spring
 
 ### Jakarta Transaction API
+
 `@jakarta.transaction.Transactional` represents the standard Jakarta EE specification. Using this annotation means relying on the Jakarta Transaction API, which provides basic transaction management capabilities.
 
 ### Spring Transaction Management
+
 `@org.springframework.transaction.annotation.Transactional` offers Spring Framework's enhanced transaction management with significantly more flexibility and features.
 
 **Key Advantages of Spring's Approach:**
+
 - Granular control over transaction behavior
 - Detailed rollback condition specifications
 - Configurable timeout values
@@ -79,10 +89,12 @@ Always creates a new transaction, suspending any existing transaction. This is p
 Creates a nested transaction using savepoints. This keeps the same database connection but creates a rollback point. If an error occurs in the nested section, Spring rolls back to the savepoint, undoing only the nested section while allowing the outer transaction to continue.
 
 **Key Difference Between REQUIRES_NEW and NESTED:**
+
 - REQUIRES_NEW consumes an additional database connection and operates independently
 - NESTED uses the same connection with savepoints, and the entire transaction (outer + nested) commits together
 
 ### Isolation Levels
+
 Isolation levels control how concurrent transactions interact:
 
 **READ_UNCOMMITTED:**
@@ -109,7 +121,9 @@ Happens when you read the same data twice within a transaction and get different
 Occurs when you run the same query twice and get different numbers of rows because another transaction inserted or deleted rows that match your query criteria.
 
 ### Read-Only Transaction Optimization
+
 Marking transactions as read-only enables several optimizations:
+
 - Database can optimize locking strategies, using more efficient mechanisms
 - Connection pooling can route queries to read replicas in master-slave setups
 - Reduces contention with other transactions
@@ -119,14 +133,17 @@ Marking transactions as read-only enables several optimizations:
 ### Lock Types
 
 **Shared vs Exclusive Locks:**
+
 - Shared locks allow multiple readers simultaneously but prevent writers
 - Exclusive locks allow only one holder at a time, blocking both readers and writers
 
 **Granularity Levels:**
+
 - Table-level locking is simple but limits concurrency dramatically
 - Row-level locking is more sophisticated, allowing higher concurrency
 
 **Locking Philosophies:**
+
 - Pessimistic locking assumes conflicts will occur and prevents them by acquiring locks early
 - Optimistic locking assumes conflicts are rare and checks for them only when committing changes
 
@@ -135,15 +152,15 @@ Marking transactions as read-only enables several optimizations:
 ```java
 @Configuration
 public class DatabaseConfig {
-    
+
     @Bean
     @Primary
     public DataSource dataSource() {
         return new RoutingDataSource();
     }
-    
+
     public class RoutingDataSource extends AbstractRoutingDataSource {
-        
+
         @Override
         protected Object determineCurrentLookupKey() {
             // Route based on transaction type
@@ -153,7 +170,7 @@ public class DatabaseConfig {
             return "master"; // Route to master for writes
         }
     }
-    
+
     @Bean
     public DataSource masterDataSource() {
         return DataSourceBuilder.create()
@@ -162,7 +179,7 @@ public class DatabaseConfig {
             .password("secure_password")
             .build();
     }
-    
+
     @Bean
     public DataSource slaveDataSource() {
         return DataSourceBuilder.create()
@@ -179,6 +196,7 @@ This configuration automatically routes read-only transactions to slave database
 ## 6. Optimistic Locking in JPA
 
 ### Implementation Mechanism
+
 Optimistic locking requires an entity with a `@Version` annotation. Each transaction that reads data holds the version property value. Before committing updates, the transaction checks if the version has changed. If it has, an OptimisticLockException is thrown; otherwise, the update proceeds and the version is incremented.
 
 ### Lock Modes
@@ -211,9 +229,10 @@ Locks only the targeted entity and its joined inheritance tables.
 Locks the entity and any related data collections through JOIN TABLE FOR UPDATE.
 
 ### Timeout Configuration
+
 ```java
-Account fromAccount = entityManager.find(Account.class, fromAccountId, 
-    LockModeType.PESSIMISTIC_WRITE, 
+Account fromAccount = entityManager.find(Account.class, fromAccountId,
+    LockModeType.PESSIMISTIC_WRITE,
     Collections.singletonMap("javax.persistence.lock.timeout", 5000));
 ```
 
@@ -265,7 +284,9 @@ Most restrictive strategy ensuring full ACID compliance.
 ## 9. Session vs Token Authentication
 
 ### Session Limitations
+
 Traditional sessions store data on the server, leading to:
+
 - High storage pressure
 - Issues in distributed environments
 - Session inconsistency in horizontal scaling scenarios
@@ -310,19 +331,25 @@ Malicious sites can trick users into making unwanted requests using HTTP-only co
 ## 11. Authentication Evolution: Cookie → Session → JWT
 
 ### Cookie Era
+
 Early web applications stored user data directly in cookies, but this approach had significant limitations:
+
 - 4KB size limit per cookie
 - Client-side storage vulnerability
 - Network overhead from including data in every request
 
 ### Session Improvement
+
 Sessions addressed cookie limitations by storing only session identifiers in cookies while keeping actual user data on the server. This approach:
+
 - Fits within cookie size limits
 - Prevents client-side data modification
 - Reduces network overhead
 
 ### JWT Innovation
+
 JWT solves scaling problems by eliminating server-side session storage, but introduces new challenges:
+
 - Token size limitations (typically under 8KB)
 - Difficulty with immediate revocation
 - Need for complementary storage for large user data
@@ -330,13 +357,17 @@ JWT solves scaling problems by eliminating server-side session storage, but intr
 ## 12. Token Compromise Detection
 
 ### Detection Strategy
+
 Systems can detect compromised tokens by monitoring usage patterns and implementing token rotation policies.
 
 ### Token Rotation Mechanism
+
 When access tokens expire, both access and refresh tokens are replaced with entirely new pairs. The old tokens are blacklisted to prevent reuse.
 
 ### Family-Based Tracking
+
 Token families use persistent identifiers across rotations. Each refresh token has:
+
 - Unique identifier (JTI)
 - Family identifier that persists across rotations
 - Relationship tracking for security monitoring
@@ -346,9 +377,11 @@ When a blacklisted refresh token is used, the system can identify and revoke all
 ## 13. SOLID Principles
 
 ### Single Responsibility Principle (SRP)
+
 Each class should have only one reason to change, focusing on a single responsibility.
 
 **Violation Example:**
+
 ```java
 class Student {
     public void registerStudent() { /* Registration logic */ }
@@ -358,6 +391,7 @@ class Student {
 ```
 
 **Correct Implementation:**
+
 ```java
 class Student {
     public void registerStudent() { /* Registration only */ }
@@ -373,9 +407,11 @@ class EmailSender {
 ```
 
 ### Open/Closed Principle (OCP)
+
 Software entities should be open for extension but closed for modification.
 
 **Violation Example:**
+
 ```java
 class AreaCalculator {
     public double calculateArea(Shape shape) {
@@ -387,6 +423,7 @@ class AreaCalculator {
 ```
 
 **Correct Implementation:**
+
 ```java
 interface Shape {
     double calculateArea();
@@ -404,9 +441,11 @@ class Square implements Shape {
 ```
 
 ### Liskov Substitution Principle (LSP)
+
 Subtypes must be substitutable for their base types without breaking functionality.
 
 **Violation Example:**
+
 ```java
 class Bird {
     public void fly() { /* Flying behavior */ }
@@ -421,6 +460,7 @@ class Ostrich extends Bird {
 ```
 
 **Correct Implementation:**
+
 ```java
 class Bird { /* Base bird behavior */ }
 
@@ -433,9 +473,11 @@ class Ostrich extends Bird { /* Cannot fly, doesn't inherit flying behavior */ }
 ```
 
 ### Interface Segregation Principle (ISP)
+
 Clients should not be forced to depend on interfaces they don't use.
 
 **Violation Example:**
+
 ```java
 interface Worker {
     void work();
@@ -449,6 +491,7 @@ class Robot implements Worker {
 ```
 
 **Correct Implementation:**
+
 ```java
 interface Workable {
     void work();
@@ -469,9 +512,11 @@ class Robot implements Workable {
 ```
 
 ### Dependency Inversion Principle (DIP)
+
 High-level modules should not depend on low-level modules. Both should depend on abstractions.
 
 **Violation Example:**
+
 ```java
 class LightBulb {
     public void turnOn() { /* Turn on light */ }
@@ -479,7 +524,7 @@ class LightBulb {
 
 class Switch {
     private LightBulb bulb; // Direct dependency on concrete class
-    
+
     public void press() {
         bulb.turnOn();
     }
@@ -487,6 +532,7 @@ class Switch {
 ```
 
 **Correct Implementation:**
+
 ```java
 interface Switchable {
     void activate();
@@ -504,11 +550,11 @@ class Fan implements Switchable {
 
 class Switch {
     private Switchable device; // Depends on abstraction
-    
+
     public Switch(Switchable device) {
         this.device = device; // Dependency injection
     }
-    
+
     public void press() {
         device.activate();
     }
@@ -517,17 +563,73 @@ class Switch {
 
 ### SOLID Benefits Summary
 
-| Principle | Primary Purpose | Key Benefit |
-|-----------|----------------|-------------|
-| **SRP** | Reduce complexity | "One class, one job" |
-| **OCP** | Enable extension | "Add new, don't modify existing" |
-| **LSP** | Preserve behavior | "Subclass replaces parent seamlessly" |
-| **ISP** | Avoid unnecessary dependencies | "Small, focused interfaces" |
-| **DIP** | Reduce coupling | "Depend on abstractions, not concrete classes" |
+| Principle | Primary Purpose                | Key Benefit                                    |
+| --------- | ------------------------------ | ---------------------------------------------- |
+| **SRP**   | Reduce complexity              | "One class, one job"                           |
+| **OCP**   | Enable extension               | "Add new, don't modify existing"               |
+| **LSP**   | Preserve behavior              | "Subclass replaces parent seamlessly"          |
+| **ISP**   | Avoid unnecessary dependencies | "Small, focused interfaces"                    |
+| **DIP**   | Reduce coupling                | "Depend on abstractions, not concrete classes" |
 
 Applying SOLID principles results in:
+
 - Fewer bugs when requirements change
 - Easier testing of individual components
 - Better code reusability
 - Reduced maintenance costs
 - More maintainable and scalable software architecture
+
+## Indexing in Databases
+
+Indexing is a crucial technique used in databases to optimize data retrieval operations. It improves query performance by minimizing disk I/O operations, thus reducing the time it takes to locate and access data. Essentially, indexing allows the database management system (DBMS) to locate data more efficiently without having to scan the entire dataset.
+
+Indexes are organized data structures that allow quick searching based on key values. When an index is created for a database table, ==it maintains a sorted order of key values along with pointers to the actual data rows==. This process significantly reduces the number of disk accesses required to fulfill a query.
+![Index structure](./images/index-structure.png)
+**Attributes of Indexing**
+Several Important attributes of indexing affect the performance and efficiency of database operations:
+
+1. **Access Types**: This refers to the type of access such as value-based search, range access, etc.
+2. **Access Time**: It refers to the time needed to find a particular data element or set of elements.
+3. **Insertion Time**: It refers to the time taken to find the appropriate space and insert new data.
+4. **Deletion Time**: Time taken to find an item and delete it as well as update the index structure.
+5. **Space Overhead**: It refers to the additional space required by the index.
+   ![Types of Index](./images/type-of-index.png)
+
+### File Organization in Indexing
+
+#### Sequential File Organization (Ordered Index File)
+
+In this type of organization, the indices are based on a sorted ordering of the values. These are generally fast and a more traditional type of storing mechanism. These Ordered or Sequential file organizations might store the data in a dense or sparse format.
+
+![Dense Index](./images/dense-index.png)
+
+![Sparse Index](./images/sparse-index.png)
+
+**Access Method**: To locate a record, we find the index record with the largest key value less than or equal to the search key, and then follow the pointers sequentially.
+
+**Access Cost**: Accesses=log⁡2(n)+1\text{Accesses} = \log_2(n) + 1Accesses=log2​(n)+1, where nnn is the number of blocks involved in the index file.
+
+#### Hash File Organization
+
+In hash file organization, data is distributed across a range of buckets based on a hash function applied to the key values. The hash function maps each key to a particular bucket, where the corresponding data can be located.
+
+### Types of Indexing Methods
+
+#### Primary Index (Clustered Index)
+
+Physically orders table data on disk according to the index key
+Only one per table (since data can only be physically sorted one way)
+Contains actual data pages, not just references
+Fastest for range queries on the indexed column
+Example: Employee table clustered by employee_id means records are physically stored in ID order
+
+![alt text](./images/clustering-index.png)
+
+#### Non-clustered or Secondary Indexing
+A non-clustered index just tells us where the data lies, i.e. it gives us a list of virtual pointers or references to the location where the data is actually stored. Data is not physically stored in the order of the index. Instead, data is present in leaf node
+
+#### Multilevel Indexing
+With the growth of the size of the database, indices also grow. As the index is stored in the main memory, a single-level index might become too large a size to store with multiple disk accesses. The multilevel indexing segregates the main block into various smaller blocks so that the same can be stored in a single block.
+
+The outer blocks are divided into inner blocks which in turn are pointed to the data blocks. This can be easily stored in the main memory with fewer overheads. This hierarchical approach reduces memory overhead and speeds up query execution.
+![alt text](multi-lelve-index.png)
