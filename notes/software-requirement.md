@@ -2,7 +2,7 @@
 
 ### Types of Diagram 💖
 
-#### Content Diagram 🏀
+#### Context Diagram 🏀
 
 **Định nghĩa**: Context Diagram là sự thể hiện sự tương tác giữa các actor (hình vuông) tương tác với hệ thống của chúng ta (hình tròn) thông qua các mũi tên thể hiện sự ra vào của dữ liệu (data must be a noun!!! ⛔)
 ![Context Diagram](./images/context-diagram.png)
