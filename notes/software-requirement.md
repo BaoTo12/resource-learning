@@ -46,3 +46,16 @@ Use case diagram symbols and notation
 
 ___
 
+### Entity relationship diagrams (ERD)
+ERD helps us understand the connection between various "entities" that make up a system.
+ERD's Components
+- Entity
+- Attributes
+
+**Relationship Between Entities in ERDs**
+- Zero ![alt text](./images/zero-rel.png)
+- One ![alt text](./images/one-rel.png)
+- Many ![alt text](./images/many-rel.png)
+- Zero or Many ![alt text](./images/zero-or-many-rel.png)
+- One or Many ![alt text](./images/one-or-many-rel.png)
+- One and only one ![alt text](./images/one-only-on-rel.png)
