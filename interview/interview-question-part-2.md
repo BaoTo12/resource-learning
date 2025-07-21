@@ -106,6 +106,44 @@ Redis provides mechanisms to automatically manage data lifecycle by setting expi
 
 
 
+## Transaction in Redis
+Redis Transactions allow the execution of a group of commands in a single step, they are centered around the commands MULTI, EXEC, DISCARD and WATCH. Redis Transactions make two important guarantees:
+
+- All the commands in a transaction are serialized and executed sequentially. A request sent by another client will never be served in the middle of the execution of a Redis Transaction. This guarantees that the commands are executed as a single isolated operation.
+
+- The EXEC command triggers the execution of all the commands in the transaction, so if a client loses the connection to the server in the context of a transaction before calling the EXEC command none of the operations are performed, instead if the EXEC command is called, all the operations are performed. When using the append-only file Redis makes sure to use a single write(2) syscall to write the transaction on disk. However if the Redis server crashes or is killed by the system administrator in some hard way it is possible that only a partial number of operations are registered. Redis will detect this condition at restart, and will exit with an error. Using the redis-check-aof tool it is possible to fix the append only file that will remove the partial transaction so that the server can start again.
+
+
+### Errors inside a transaction 
+- A command may fail to be queued, so there may be an error ==before calling EXEC==
+- A command may fail ==after EXEC is called==. Errors happening after EXEC instead are not handled in a special way: all the other commands will be executed even if some command fails during the transaction.
+--> Starting with Redis 2.6.5, the server will detect an error during the accumulation of commands. It will then refuse to execute the transaction returning an error during EXEC, discarding the transaction.
+
+### Rollback in Redis
+
+- Redis does not support rollbacks of transactions since supporting rollbacks would have a significant impact on the simplicity and performance of Redis.
+
+### Optimistic locking using check-and-set
+
+- ==WATCH== is used to provide a check-and-set (CAS) behavior to Redis transactions.
+- WATCHed keys are monitored in order to detect changes against them. If at least one watched key is modified before the EXEC command, the whole transaction aborts, and EXEC returns a Null reply to notify that the transaction failed.
+- So what is WATCH really about? It is a command that will make the EXEC conditional: we are asking Redis to perform the transaction only if none of the WATCHed keys were modified
+
+### Summary 
+Transaction is a group of command that starts with "MULTI" command and ends with "EXEC" command 
+Transactions in Redis have the following properties
+* Redis doesn't have rollback mechanism like other databases. And Redis solves this problem by WATCH command, it is like optimistic lock with version checking
+*  All commands in a transaction will be queued and performed sequentially 
+* During the process of performing a transaction if a command is failed to execute, other commands will be performed normally
+* Command Queueing Error (before EXEC)	❌ Entire transaction is discarded. Redis refuses to run EXEC.	Syntax error, wrong arity (e.g., SET key without a value).
+
+
+
+
+
+
+
+
 
 
 
