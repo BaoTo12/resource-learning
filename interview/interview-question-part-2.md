@@ -66,7 +66,10 @@ Redis (**RE**mote **DI**ctionary **S**erver) is an open source, in-memory, NoSQL
 **Strings (Key-Value):**
 - This is the most basic data structure, storing a simple mapping between a key and a string value.
 - Common commands include GET and SET.
-- Applications: caching general data, implementing counters (e.g., number of likes), or storing small blocks of data.
+- ==Applications==: Dùng để lưu text, number, email or serialized objects. String can save up to 512MB, lý do là vì việc triển khai trong String là **SDS(String Dynamic Simple)** là một chuỗi có thể thay đổi tại runtime, và có cấu trúc/format đơn giản. SDS có vài loại mã hóa như sau
+    + **Embedded String** chiếm 64 Bytes dung lượng và lưu <= 44 Bytes dữ liệu
+    + **Raw String** lưu > 44 bytes
+    + **int** ?? chắc là lưu string theo kiểu mã hóa URL64
 
 **Hashes:**
 - A hash is a map between fields and string values, ideal for representing objects.
@@ -75,7 +78,7 @@ Redis (**RE**mote **DI**ctionary **S**erver) is an open source, in-memory, NoSQL
 - Applications: storing user information (e.g., user ID, name, email as fields), or product details.
 
 **Lists:**
-- Lists are ordered collections of strings, functioning like linked lists.
+- Lists are ordered collections of strings, functioning like doubled-linked lists.
 - They are versatile and have many application scenarios.
 - Common commands include LPUSH, RPUSH, LPOP, RPOP, and LRANGE.
 - Applications: Implementing Facebook's follower/following lists or activity feeds (like Instagram's feed) where order matters.
