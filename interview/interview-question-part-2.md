@@ -144,6 +144,7 @@ Transactions in Redis have the following properties
 ![alt text](./images/pub-sub-pattern.png)
 
 Khi một client **đã SUBSCRIBE** vào một hoặc nhiều channel, nó bước vào subscribed state, nghĩa là chỉ được phép gửi lệnh liên quan đến pub/sub (SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUNSUBSCRIBE...), cùng một số lệnh điều khiển như PING hoặc QUIT. Ngoài những lệnh này, client không được gửi các lệnh Redis khác (như SET, GET, ZADD...) nếu không dùng RESP3. The commands that are allowed in the context of a subscribed RESP2 client are:
+
 - PING
 - PSUBSCRIBE
 - PUNSUBSCRIBE
@@ -158,17 +159,17 @@ Redis' Pub/Sub exhibits **at-most-once message delivery semantics**. As the name
 
 If your application requires stronger delivery guarantees, you may want to learn about ==Redis Streams==. Messages in streams are persisted, and support both ==at-most-once as well as at-least-once== delivery semantics.
 
+### Format of pushed messages
 
-### Format of pushed messages 
 A message is an array-reply with three elements.
 
-The first element is the kind of message:
+khi client thực hiện lệnh SUBSCRIBE hay UNSUBSCRIBE, Redis sẽ gửi thông điệp (message) đến client.
 
-- **subscribe**: means that we successfully subscribed to the channel given as the second element in the reply. The third argument represents the number of channels we are currently subscribed to.
+Những message này có dạng array (mảng) gồm các phần:
 
-- **unsubscribe**: means that we successfully unsubscribed from the channel given as second element in the reply. The third argument represents the number of channels we are currently subscribed to. When the last argument is zero, we are no longer subscribed to any channel, and the client can issue any kind of Redis command as we are outside the Pub/Sub state.
+- Phần tử đầu là loại message (subscribe, unsubscribe, message, v.v.).
+- Phần tử tiếp theo là tên channel.
+- Phần tử cuối là số lượng channel hiện đang sub.
 
-- **message**: it is a message received as a result of a PUBLISH command issued by another client. The second element is the name of the originating channel, and the third argument is the actual message payload.
-
-> __NOTE__: Pub & Sub trong Redis có phải là Message Queue hay không
-> --> Câu trả lời là __không__. Bởi vì nó không có 1 cái tính năng thường được có trong một message queue, bởi vì trong message queue là 1 cái hàng đợi, queue phải có tính năng lưu trữ messages, đảm bảo bên kia có nhận được hay không, sắp xếp, lưu trữ message .Còn pub/sub thì cho phép nhiều client subscribe vào nhiều channels và nhận messages published lên các channels đó, và nó không có sự phân phối liên tục và đảm bảo khách hàng nhận được hay không (cơ chế at-most-once delivery) 
+> **NOTE**: Pub & Sub trong Redis có phải là Message Queue hay không
+> --> Câu trả lời là **không**. Bởi vì nó không có 1 cái tính năng thường được có trong một message queue, bởi vì trong message queue là 1 cái hàng đợi, queue phải có tính năng lưu trữ messages, đảm bảo bên kia có nhận được hay không, sắp xếp, lưu trữ message .Còn pub/sub thì cho phép nhiều client subscribe vào nhiều channels và nhận messages published lên các channels đó, và nó không có sự phân phối liên tục và đảm bảo khách hàng nhận được hay không (cơ chế at-most-once delivery)
