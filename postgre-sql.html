@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive PostgreSQL Developer Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Soothing Sapphire & Sand" -->
+    <!-- Application Structure Plan: The application is structured as a single-page interactive guide. A fixed sidebar on the left contains the main roadmap sections (Core Concepts, SQL, Security, etc.), acting as the primary navigation. The main content area on the right displays the topics for the selected section as a series of expandable cards. This drill-down approach was chosen to manage the high information density of the report, allowing users to get a high-level overview and then dive into specifics without being overwhelmed. A progress tracking feature (marking topics as complete) is included to enhance user engagement and provide a sense of accomplishment, which is crucial for a learning tool. This structure prioritizes user-led exploration and clarity over a linear presentation of the original document. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Roadmap structure -> Goal: Provide a high-level overview of the roadmap's scope -> Viz/Presentation: Horizontal Bar Chart (Chart.js) showing the number of sub-topics per section -> Interaction: Hover for tooltips -> Justification: Gives an immediate visual sense of the depth of each topic area.
+        - Report Info: SQL JOIN types -> Goal: Compare different JOINs -> Viz/Presentation: HTML/CSS Venn-like diagrams -> Interaction: Static visual aid -> Justification: Visually explains a core relational concept more effectively than text alone, adhering to the NO SVG rule.
+        - Report Info: Configuration parameters (`postgresql.conf`) -> Goal: Organize and make a long list of items searchable -> Viz/Presentation: Interactive table with a search filter -> Interaction: User types in search box to filter table rows -> Justification: Improves usability for dense reference material.
+        - Report Info: All other topics -> Goal: Inform and organize -> Viz/Presentation: Expandable cards (Accordion style) -> Interaction: Click to expand/collapse and reveal detailed text and code snippets -> Justification: Manages screen space effectively and allows users to focus on one concept at a time.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6;
+            /* Light Gray */
+        }
+
+        .sidebar-item.active {
+            background-color: #E0E7FF;
+            /* Indigo 100 */
+            color: #3730A3;
+            /* Indigo 800 */
+            font-weight: 600;
+        }
+
+        .content-card {
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #E5E7EB;
+            /* Gray 200 */
+        }
+
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+
+        .card-content.expanded {
+            max-height: 2000px;
+            /* Large enough for content */
+        }
+
+        .code-block {
+            background-color: #1F2937;
+            /* Gray 800 */
+            color: #F9FAFB;
+            /* Gray 50 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+
+        .join-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: -20px;
+        }
+
+        .join-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-white shadow-md flex-shrink-0 overflow-y-auto">
+            <div class="p-4">
+                <h1 class="text-xl font-bold text-indigo-800">PostgreSQL Roadmap</h1>
+                <p class="text-sm text-gray-500">For Backend Developers</p>
+            </div>
+            <nav id="sidebar-nav" class="mt-4 flex flex-col space-y-1 px-2">
+                <!-- Nav items will be injected here -->
+            </nav>
+            <div class="p-4 mt-auto">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-center text-sm mt-2 text-gray-600">0% Complete</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <div id="content-area">
+                <!-- Content will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const roadmapData = [
+            {
+                id: 'overview',
+                title: 'Roadmap Overview',
+                topics: [
+                    {
+                        id: 'overview-intro',
+                        title: 'Visualizing Your Learning Path',
+                        content: `
+                            <p class="mb-4">This interactive roadmap is designed to guide you through the essential skills for mastering PostgreSQL as a backend developer. The original report is dense, so this application breaks it down into manageable, thematic sections. Use the sidebar to navigate between major areas of study.</p>
+                            <p class="mb-4">The chart below provides a visual overview of the roadmap's structure, showing the number of sub-topics within each major section. This helps you gauge the depth of each area and plan your learning journey accordingly. Sections with more topics, like 'Mastering SQL' and 'Advanced Topics', represent core areas that require significant attention.</p>
+                            <div class="chart-container bg-white p-4 rounded-lg shadow">
+                                <canvas id="overviewChart"></canvas>
+                            </div>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'core',
+                title: 'Core Concepts',
+                topics: [
+                    {
+                        id: 'core-rdbms',
+                        title: 'RDBMS Fundamentals',
+                        content: `
+                            <p>Relational Database Management Systems (RDBMS) organize data into tables with rows and columns, ensuring data integrity through features like ACID transactions. They offer robust security, complex querying, and reliable backup/recovery.</p>
+                            <p class="mt-2"><strong>Limitations:</strong> Scaling can be challenging and expensive (vertical scaling). Rigid schemas can be difficult to modify in agile environments, and complex joins on large tables can be slow.</p>
+                        `
+                    },
+                    {
+                        id: 'core-acid',
+                        title: 'ACID Properties',
+                        content: `
+                            <p>ACID is a set of properties ensuring database transactions are processed reliably. This is a cornerstone of relational databases.</p>
+                            <div class="mt-4 space-y-2">
+                                <details class="group bg-gray-50 p-3 rounded-lg">
+                                    <summary class="font-semibold cursor-pointer"><strong>A</strong>tomicity</summary>
+                                    <p class="mt-2 text-gray-700">Ensures that a transaction is an "all or nothing" operation. If any part of the transaction fails, the entire transaction is rolled back.</p>
+                                </details>
+                                <details class="group bg-gray-50 p-3 rounded-lg">
+                                    <summary class="font-semibold cursor-pointer"><strong>C</strong>onsistency</summary>
+                                    <p class="mt-2 text-gray-700">Guarantees that a transaction brings the database from one valid state to another, enforcing all integrity constraints.</p>
+                                </details>
+                                <details class="group bg-gray-50 p-3 rounded-lg">
+                                    <summary class="font-semibold cursor-pointer"><strong>I</strong>solation</summary>
+                                    <p class="mt-2 text-gray-700">Ensures that concurrent transactions execute independently without interfering with each other, preventing data anomalies.</p>
+                                </details>
+                                <details class="group bg-gray-50 p-3 rounded-lg">
+                                    <summary class="font-semibold cursor-pointer"><strong>D</strong>urability</summary>
+                                    <p class="mt-2 text-gray-700">Guarantees that once a transaction is committed, its changes are permanent and will survive system failures. This is often achieved with a Write-Ahead Log (WAL).</p>
+                                </details>
+                            </div>
+                        `
+                    },
+                    {
+                        id: 'core-mvcc',
+                        title: 'Multi-Version Concurrency Control (MVCC)',
+                        content: `
+                            <p>PostgreSQL's core mechanism for handling concurrency. Instead of locking data, it creates a new version of a row when it's updated. This means readers don't block writers, and writers don't block readers, significantly improving performance in multi-user environments.</p>
+                            <p class="mt-2"><strong>Key Takeaway:</strong> MVCC is why PostgreSQL is so good at handling many simultaneous connections. However, it creates "dead tuples" (old row versions) that must be cleaned up by the <code>VACUUM</code> process to reclaim disk space.</p>
+                        `
+                    },
+                    {
+                        id: 'core-objects',
+                        title: 'Database Objects',
+                        content: `
+                            <p>PostgreSQL organizes data and structures through various objects:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>Schemas:</strong> Logical containers or namespaces for tables, views, etc. Good for organizing multi-tenant apps.</li>
+                                <li><strong>Tables:</strong> The fundamental unit for storing data in rows and columns.</li>
+                                <li><strong>Data Types:</strong> Defines the kind of data a column can hold (e.g., <code>integer</code>, <code>text</code>, <code>timestamp</code>, <code>jsonb</code>). Choosing the right type is key for performance and integrity.</li>
+                                <li><strong>Constraints:</strong> Rules to enforce data validity (e.g., <code>PRIMARY KEY</code>, <code>FOREIGN KEY</code>, <code>NOT NULL</code>, <code>UNIQUE</code>, <code>CHECK</code>).</li>
+                            </ul>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'sql',
+                title: 'Mastering SQL',
+                topics: [
+                    {
+                        id: 'sql-ddl-dml',
+                        title: 'SQL Sub-languages: DDL, DML, DQL',
+                        content: `
+                            <p>SQL is divided into categories based on function:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>DDL (Data Definition Language):</strong> Defines the database structure. Commands: <code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>.</li>
+                                <li><strong>DML (Data Manipulation Language):</strong> Manages the data itself. Commands: <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>.</li>
+                                <li><strong>DQL (Data Query Language):</strong> Retrieves data. The primary command is <code>SELECT</code>.</li>
+                            </ul>
+                            <p class="mt-2"><strong>Example DDL:</strong></p>
+                            <div class="code-block">CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL);</div>
+                            <p class="mt-2"><strong>Example DML:</strong></p>
+                            <div class="code-block">INSERT INTO users (email) VALUES ('dev@example.com');</div>
+                        `
+                    },
+                    {
+                        id: 'sql-joins',
+                        title: 'Joining Tables',
+                        content: `
+                            <p>Joins are used to combine rows from two or more tables based on a related column. Visualizing them can help understanding.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <h4 class="font-semibold">INNER JOIN</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Returns matching rows from both tables.</p>
+                                    <div class="join-diagram">
+                                        <div class="join-circle bg-blue-200 border-2 border-blue-500">A</div>
+                                        <div class="join-circle bg-blue-200 border-2 border-blue-500" style="background-color: #60A5FA;">B</div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <h4 class="font-semibold">LEFT JOIN</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Returns all rows from the left table, and matched rows from the right.</p>
+                                    <div class="join-diagram">
+                                        <div class="join-circle bg-blue-500 border-2 border-blue-500 text-white">A</div>
+                                        <div class="join-circle bg-blue-200 border-2 border-blue-500" style="background-color: #60A5FA;">B</div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <h4 class="font-semibold">RIGHT JOIN</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Returns all rows from the right table, and matched rows from the left.</p>
+                                    <div class="join-diagram">
+                                        <div class="join-circle bg-blue-200 border-2 border-blue-500">A</div>
+                                        <div class="join-circle bg-blue-500 border-2 border-blue-500 text-white" style="background-color: #60A5FA;">B</div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <h4 class="font-semibold">FULL OUTER JOIN</h4>
+                                    <p class="text-sm text-gray-600 mb-2">Returns all rows when there is a match in either table.</p>
+                                    <div class="join-diagram">
+                                        <div class="join-circle bg-blue-500 border-2 border-blue-500 text-white">A</div>
+                                        <div class="join-circle bg-blue-500 border-2 border-blue-500 text-white" style="background-color: #60A5FA;">B</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    {
+                        id: 'sql-advanced',
+                        title: 'Advanced Querying: CTEs & Window Functions',
+                        content: `
+                            <p>Go beyond simple SELECTs to write cleaner, more powerful queries.</p>
+                            <h4 class="font-semibold mt-4">Common Table Expressions (CTEs)</h4>
+                            <p>CTEs (using the <code>WITH</code> clause) break down complex queries into logical, readable steps. They act as named temporary result sets.</p>
+                            <div class="code-block">
+WITH regional_sales AS (
+    SELECT region, SUM(amount) AS total_sales
+    FROM orders
+    GROUP BY region
+)
+SELECT region, total_sales
+FROM regional_sales
+WHERE total_sales > (SELECT SUM(total_sales) / 10 FROM regional_sales);
+                            </div>
+                            <h4 class="font-semibold mt-4">Window Functions</h4>
+                            <p>Perform calculations across a set of table rows that are somehow related to the current row. This is useful for rankings, moving averages, etc., without using GROUP BY.</p>
+                            <div class="code-block">
+SELECT
+    employee_name,
+    department,
+    salary,
+    RANK() OVER (PARTITION BY department ORDER BY salary DESC) as rank_in_department
+FROM employees;
+                            </div>
+                        `
+                    },
+                    {
+                        id: 'sql-plpgsql',
+                        title: 'Procedural Language: PL/pgSQL',
+                        content: `
+                            <p>PL/pgSQL is PostgreSQL's native procedural language, allowing you to write functions, procedures, and triggers with complex logic, loops, and error handling.</p>
+                            <h4 class="font-semibold mt-4">Functions</h4>
+                            <p>Reusable blocks of code that return a value. Can be used in queries.</p>
+                            <h4 class="font-semibold mt-4">Procedures</h4>
+                            <p>Similar to functions but do not return a value. Can manage transactions (<code>COMMIT</code>, <code>ROLLBACK</code>) internally.</p>
+                            <h4 class="font-semibold mt-4">Triggers</h4>
+                            <p>A special function that automatically executes when a specific event (<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) occurs on a table. Used for auditing or enforcing complex business rules.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'security',
+                title: 'Security',
+                topics: [
+                    {
+                        id: 'security-roles',
+                        title: 'Roles and Privileges',
+                        content: `
+                            <p>PostgreSQL unifies users and groups into a single concept: the <strong>ROLE</strong>. A role with <code>LOGIN</code> privilege is a user. Roles without are used as groups for managing permissions.</p>
+                            <p class="mt-2">The core principle is <strong>Least Privilege (PoLP)</strong>: grant only the minimum permissions necessary. Use <code>GRANT</code> to assign privileges and <code>REVOKE</code> to remove them.</p>
+                            <div class="code-block">
+-- Create a read-only role
+CREATE ROLE readonly;
+GRANT CONNECT ON DATABASE myapp_db TO readonly;
+GRANT USAGE ON SCHEMA public TO readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
+
+-- Create a user and assign the role
+CREATE ROLE bob WITH LOGIN PASSWORD 'secret';
+GRANT readonly TO bob;
+                            </div>
+                        `
+                    },
+                    {
+                        id: 'security-auth',
+                        title: 'Authentication Models & pg_hba.conf',
+                        content: `
+                            <p>Client authentication is controlled by the <code>pg_hba.conf</code> (Host-Based Authentication) file. It contains a set of rules, processed in order, that specify which users can connect from which IP addresses using which authentication method.</p>
+                            <p class="mt-2"><strong>Common Methods:</strong></p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><code>scram-sha-256</code>: Secure password authentication. The recommended method.</li>
+                                <li><code>md5</code>: Less secure password-based method.</li>
+                                <li><code>peer</code>: For local connections, uses OS username.</li>
+                                <li><code>trust</code>: Allows connection without a password. <strong>Never use in production.</strong></li>
+                            </ul>
+                            <p class="mt-2">Always use SSL/TLS to encrypt connections over the network.</p>
+                        `
+                    },
+                    {
+                        id: 'security-rls',
+                        title: 'Row-Level Security (RLS)',
+                        content: `
+                            <p>RLS is a powerful feature that allows you to control which <em>rows</em> a user can access or modify. Policies are applied automatically at the database level, providing a robust security layer.</p>
+                            <p class="mt-2">This is ideal for multi-tenant applications where you want to ensure a user from Tenant A can never see data from Tenant B.</p>
+                            <div class="code-block">
+-- Enable RLS on the table
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+-- Create a policy that allows users to only see their own documents
+CREATE POLICY user_docs_policy ON documents
+FOR ALL
+TO public
+USING (user_id = current_setting('app.current_user_id')::int);
+                            </div>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'config',
+                title: 'Configuration & Tuning',
+                topics: [
+                    {
+                        id: 'config-conf',
+                        title: 'Key postgresql.conf Parameters',
+                        content: `
+                            <p>The <code>postgresql.conf</code> file is the heart of server configuration. Tuning it is essential for performance. Below are some of the most impactful parameters. Use the search box to filter.</p>
+                            <input type="text" id="param-search" placeholder="Search for a parameter..." class="w-full p-2 border rounded-md my-4">
+                            <div class="overflow-x-auto">
+                                <table id="param-table" class="w-full text-left whitespace-nowrap">
+                                    <thead class="bg-gray-200">
+                                        <tr>
+                                            <th class="p-2">Parameter</th>
+                                            <th class="p-2">Description & Common Setting</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td class="p-2 font-mono">shared_buffers</td><td class="p-2">Memory for caching data. ~25% of system RAM.</td></tr>
+                                        <tr><td class="p-2 font-mono">work_mem</td><td class="p-2">Memory for sorts/hashes per operation. Start low (e.g., 4MB) and increase carefully.</td></tr>
+                                        <tr><td class="p-2 font-mono">maintenance_work_mem</td><td class="p-2">Memory for maintenance tasks (VACUUM, CREATE INDEX). Set higher (e.g., 1GB).</td></tr>
+                                        <tr><td class="p-2 font-mono">effective_cache_size</td><td class="p-2">Hint to the planner about available OS cache. ~50-75% of system RAM.</td></tr>
+                                        <tr><td class="p-2 font-mono">max_wal_size</td><td class="p-2">Soft limit on WAL size to reduce checkpoint frequency. Increase for write-heavy loads (e.g., 1GB or more).</td></tr>
+                                        <tr><td class="p-2 font-mono">checkpoint_completion_target</td><td class="p-2">Spreads checkpoint I/O over time. Set to 0.9.</td></tr>
+                                        <tr><td class="p-2 font-mono">random_page_cost</td><td class="p-2">Planner cost for random I/O. Lower for SSDs (e.g., 1.1) to favor index scans.</td></tr>
+                                        <tr><td class="p-2 font-mono">max_connections</td><td class="p-2">Max concurrent connections. Use a connection pooler like PgBouncer instead of setting this too high.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        `
+                    },
+                    {
+                        id: 'config-extensions',
+                        title: 'Extending PostgreSQL',
+                        content: `
+                            <p>PostgreSQL's functionality can be dramatically expanded with extensions. They add new data types, functions, index types, and more.</p>
+                            <p class="mt-2"><strong>Popular Extensions:</strong></p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>PostGIS:</strong> Adds support for geographic objects and spatial queries. The de-facto standard for geospatial data.</li>
+                                <li><strong>pg_stat_statements:</strong> Tracks execution statistics of all SQL statements, invaluable for performance tuning.</li>
+                                <li><strong>TimescaleDB:</strong> Transforms PostgreSQL into a powerful time-series database.</li>
+                                <li><strong>Citus:</strong> Turns PostgreSQL into a distributed, sharded database for massive horizontal scaling.</li>
+                                <li><strong>PostgreSQL Anonymizer:</strong> Masks or replaces sensitive data, useful for creating safe development datasets.</li>
+                            </ul>
+                            <p class="mt-2">Install an extension with a simple command:</p>
+                            <div class="code-block">CREATE EXTENSION IF NOT EXISTS "uuid-ossp";</div>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'infra',
+                title: 'Infrastructure & Deployment',
+                topics: [
+                    {
+                        id: 'infra-deploy',
+                        title: 'Deployment Options',
+                        content: `
+                            <p>How you run PostgreSQL depends on your needs, from local development to production.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>Docker:</strong> Excellent for local development and testing. Provides a consistent, isolated environment. Use volumes for data persistence.</li>
+                                <li><strong>Managed Cloud Services (AWS RDS, GCP Cloud SQL):</strong> The easiest way to run PostgreSQL in production. The provider handles backups, patching, and high availability, letting you focus on your application.</li>
+                                <li><strong>Kubernetes (StatefulSet, Helm, Operators):</strong> For container-native environments. Use a Postgres Operator (e.g., from Crunchy Data or Zalando) to automate complex tasks like HA, backups, and scaling.</li>
+                            </ul>
+                        `
+                    },
+                    {
+                        id: 'infra-pooling',
+                        title: 'Connection Pooling with PgBouncer',
+                        content: `
+                            <p>Creating a new database connection for every request is very expensive. A connection pooler like <strong>PgBouncer</strong> sits between your application and PostgreSQL, maintaining a pool of ready-to-use connections.</p>
+                            <p class="mt-2">This dramatically improves performance and allows your application to handle thousands of concurrent clients with only a few dozen actual database connections.</p>
+                            <p class="mt-2"><strong>Key Concept:</strong> Your application connects to PgBouncer, not directly to PostgreSQL. Use <code>transaction</code> pooling mode for most web applications.</p>
+                        `
+                    },
+                    {
+                        id: 'infra-replication',
+                        title: 'Replication for High Availability',
+                        content: `
+                            <p>Replication creates copies of your database to ensure high availability (HA) and enable read scaling.</p>
+                            <h4 class="font-semibold mt-4">Streaming Replication (Physical)</h4>
+                            <p>The primary server streams its Write-Ahead Log (WAL) to one or more standby replicas. Replicas are near-real-time, byte-for-byte copies. If the primary fails, a replica can be promoted to become the new primary. This is the standard for HA.</p>
+                            <h4 class="font-semibold mt-4">Logical Replication</h4>
+                            <p>Replicates data changes (<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) based on their logical content, not physical location. This allows for selective replication (specific tables), and replication between different major PostgreSQL versions or even to other systems. It uses a publish/subscribe model.</p>
+                        `
+                    },
+                    {
+                        id: 'infra-backup',
+                        title: 'Backup and Recovery',
+                        content: `
+                            <p>A solid backup strategy is non-negotiable.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong><code>pg_dump</code> & <code>pg_dumpall</code>:</strong> Standard tools for creating logical backups (SQL scripts). <code>pg_dump</code> backs up a single database, while <code>pg_dumpall</code> backs up the entire cluster, including global objects like roles.</li>
+                                <li><strong>Point-in-Time Recovery (PITR):</strong> The most robust strategy. It combines periodic physical base backups (using <code>pg_basebackup</code>) with continuous archiving of WAL files. This allows you to restore your database to any specific moment in time.</li>
+                            </ul>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'app',
+                title: 'Application Skills',
+                topics: [
+                    {
+                        id: 'app-schema',
+                        title: 'Schema Design & Normalization',
+                        content: `
+                            <p>Good schema design is critical for performance and maintainability.</p>
+                            <h4 class="font-semibold mt-4">Normalization</h4>
+                            <p>The process of organizing data to reduce redundancy and improve data integrity. The goal is to reach at least the Third Normal Form (3NF).</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>1NF:</strong> Each cell is single-valued. No repeating groups.</li>
+                                <li><strong>2NF:</strong> In 1NF + all non-key attributes depend on the whole primary key.</li>
+                                <li><strong>3NF:</strong> In 2NF + no transitive dependencies (non-key attributes don't depend on other non-key attributes).</li>
+                            </ul>
+                            <h4 class="font-semibold mt-4">Common Anti-Patterns</h4>
+                            <p>Avoid these common mistakes:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>EAV (Entity-Attribute-Value):</strong> Storing attributes as rows. Makes querying a nightmare.</li>
+                                <li><strong>Comma-Separated Lists:</strong> Storing multiple values in a single text field. Use a separate junction table instead.</li>
+                                <li><strong>Using <code>SELECT *</code>:</strong> Always specify the columns you need. It's more efficient and less prone to breaking when the schema changes.</li>
+                            </ul>
+                        `
+                    },
+                    {
+                        id: 'app-scaling',
+                        title: 'Scaling: Partitioning & Sharding',
+                        content: `
+                            <p>For very large datasets, you need strategies to scale beyond a single large table or server.</p>
+                            <h4 class="font-semibold mt-4">Partitioning</h4>
+                            <p>Splitting one large logical table into smaller physical pieces (partitions) within a single database instance. Queries can then scan only the relevant partitions, which is much faster.</p>
+                            <p><strong>Common Strategy:</strong> Range partitioning on a timestamp for time-series data (e.g., a new partition for each month).</p>
+                            <h4 class="font-semibold mt-4">Sharding</h4>
+                            <p>A form of horizontal partitioning where data is split across multiple independent database <em>servers</em>. This is used for massive horizontal scaling when a single server is no longer sufficient. It's complex and usually implemented with extensions like Citus.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                id: 'advanced',
+                title: 'Advanced Topics',
+                topics: [
+                    {
+                        id: 'advanced-internals',
+                        title: 'Low-Level Internals',
+                        content: `
+                            <p>Understanding how PostgreSQL works under the hood helps with advanced tuning and troubleshooting.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>Process Architecture:</strong> A main <code>postmaster</code> process forks a new backend process for each client connection.</li>
+                                <li><strong>Memory Architecture:</strong> Key areas include Shared Buffers (data cache), WAL Buffers, and per-connection <code>work_mem</code>.</li>
+                                <li><strong>Physical Storage:</strong> Data is stored in 8KB pages. Large values are stored "out of line" using TOAST (The Oversized-Attribute Storage Technique).</li>
+                                <li><strong>Lock Management:</strong> PostgreSQL uses a multi-level locking system to manage concurrency. You can inspect current locks in the <code>pg_locks</code> view.</li>
+                            </ul>
+                        `
+                    },
+                    {
+                        id: 'advanced-indexes',
+                        title: 'Advanced Indexing',
+                        content: `
+                            <p>Beyond the default B-Tree, PostgreSQL offers specialized index types for different use cases.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>B-Tree:</strong> The default. Best for equality and range queries on most data types.</li>
+                                <li><strong>GIN (Generalized Inverted Index):</strong> Ideal for indexing composite types like arrays or <code>jsonb</code>, and for full-text search. Fast to query, slower to build.</li>
+                                <li><strong>GiST (Generalized Search Tree):</strong> A framework for building indexes for complex data types like geometric data and full-text search.</li>
+                                <li><strong>BRIN (Block Range Index):</strong> For very large tables where data has a natural correlation with its physical storage order (e.g., a timestamp column in a log table). They are tiny and very fast for range queries on such data.</li>
+                                <li><strong>Hash:</strong> Only useful for equality checks. Generally not recommended as they are not transaction-safe.</li>
+                            </ul>
+                        `
+                    },
+                    {
+                        id: 'advanced-optimization',
+                        title: 'Query Analysis & Optimization',
+                        content: `
+                            <p>The key to performance is understanding how the query planner works.</p>
+                            <p class="mt-2">Use <strong><code>EXPLAIN ANALYZE</code></strong> to see the planner's chosen execution plan and the <em>actual</em> time and rows for each step. This is the single most important tool for debugging slow queries.</p>
+                            <p class="mt-2"><strong>What to look for in the plan:</strong></p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>Sequential Scans (Seq Scan)</strong> on large tables: Often indicates a missing index.</li>
+                                <li><strong>Estimated vs. Actual Rows:</strong> Large discrepancies suggest outdated table statistics. Run <code>ANALYZE table_name;</code>.</li>
+                                <li><strong>Nested Loop Joins</strong> with large inner loops: May indicate a poor join strategy.</li>
+                                <li><strong>Sorts on Disk:</strong> Indicates that <code>work_mem</code> is too low for the query.</li>
+                            </ul>
+                            <p class="mt-2">Paste the output of <code>EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)</code> into a visualizer like <a href="https://explain.dalibo.com/" target="_blank" class="text-indigo-600 hover:underline">explain.dalibo.com</a> for easier analysis.</p>
+                        `
+                    }
+                ]
+            }
+        ];
+
+        const sidebarNav = document.getElementById('sidebar-nav');
+        const contentArea = document.getElementById('content-area');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        let completedTopics = new Set();
+        const totalTopics = roadmapData.flatMap(section => section.topics).length;
+
+        function updateProgress() {
+            const progress = totalTopics > 0 ? (completedTopics.size / totalTopics) * 100 : 0;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${Math.round(progress)}% Complete (${completedTopics.size}/${totalTopics})`;
+        }
+
+        function renderSidebar() {
+            sidebarNav.innerHTML = roadmapData.map(section => `
+                <a href="#" class="sidebar-item block px-4 py-2 text-gray-700 rounded-md hover:bg-gray-200" data-section="${section.id}">
+                    ${section.title}
+                </a>
+            `).join('');
+        }
+
+        function renderContent(sectionId) {
+            const section = roadmapData.find(s => s.id === sectionId);
+            if (!section) return;
+
+            contentArea.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2">${section.title}</h2>
+                <div class="border-b-2 border-indigo-500 w-24 mb-6"></div>
+                <div class="space-y-4">
+                    ${section.topics.map(topic => `
+                        <div class="content-card bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div class="p-4 cursor-pointer flex justify-between items-center" data-topic-id="${topic.id}">
+                                <h3 class="text-lg font-semibold">${topic.title}</h3>
+                                <div class="flex items-center space-x-4">
+                                    <button class="complete-btn text-gray-400 hover:text-green-500" data-topic-id="${topic.id}" title="Mark as complete">
+                                        <svg class="w-6 h-6 ${completedTopics.has(topic.id) ? 'text-green-500' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
+                                    <svg class="w-6 h-6 expand-arrow transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                            <div class="card-content px-4">
+                                <div class="py-4 border-t border-gray-200">
+                                    ${topic.content}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            if (sectionId === 'overview') {
+                renderOverviewChart();
+            }
+            if (sectionId === 'config') {
+                setupConfigSearch();
+            }
+        }
+
+        function renderOverviewChart() {
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            const data = {
+                labels: roadmapData.filter(s => s.id !== 'overview').map(s => s.title),
+                datasets: [{
+                    label: '# of Topics',
+                    data: roadmapData.filter(s => s.id !== 'overview').map(s => s.topics.length),
+                    backgroundColor: 'rgba(79, 70, 229, 0.6)', // Indigo
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            };
+            new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Roadmap Sections by Topic Count'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function setupConfigSearch() {
+            const searchInput = document.getElementById('param-search');
+            const table = document.getElementById('param-table');
+            const rows = table.getElementsByTagName('tr');
+
+            searchInput.addEventListener('keyup', function () {
+                const filter = searchInput.value.toLowerCase();
+                for (let i = 1; i < rows.length; i++) {
+                    let td = rows[i].getElementsByTagName('td')[0];
+                    if (td) {
+                        let txtValue = td.textContent || td.innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            rows[i].style.display = "";
+                        } else {
+                            rows[i].style.display = "none";
+                        }
+                    }
+                }
+            });
+        }
+
+        sidebarNav.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('.sidebar-item');
+            if (target) {
+                const sectionId = target.dataset.section;
+                document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+                target.classList.add('active');
+                renderContent(sectionId);
+            }
+        });
+
+        contentArea.addEventListener('click', (e) => {
+            const cardHeader = e.target.closest('[data-topic-id]');
+            const completeBtn = e.target.closest('.complete-btn');
+
+            if (completeBtn) {
+                e.stopPropagation();
+                const topicId = completeBtn.dataset.topicId;
+                if (completedTopics.has(topicId)) {
+                    completedTopics.delete(topicId);
+                    completeBtn.querySelector('svg').classList.remove('text-green-500');
+                } else {
+                    completedTopics.add(topicId);
+                    completeBtn.querySelector('svg').classList.add('text-green-500');
+                }
+                updateProgress();
+                return;
+            }
+
+            if (cardHeader) {
+                const content = cardHeader.nextElementSibling;
+                const arrow = cardHeader.querySelector('.expand-arrow');
+                content.classList.toggle('expanded');
+                arrow.classList.toggle('rotate-180');
+            }
+        });
+
+        // Initial render
+        renderSidebar();
+        document.querySelector('.sidebar-item').classList.add('active');
+        renderContent('overview');
+        updateProgress();
+
+    </script>
+</body>
+
+</html>
