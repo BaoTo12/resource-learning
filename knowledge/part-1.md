@@ -11,3 +11,36 @@ Formula for looking a child comment, for instance I wanna look for all child com
 >__The formula goes like this__: All comments that have index > 3 && index < 8. 
 
 
+### Message Queue
+#### Step‑by‑Step Message Flow
+
+**Produce:**
+- Producer formats payload + headers, publishes to Exchange/Topic.
+- Broker responds with confirm (if enabled).
+
+**Route:**
+- Broker examines routing key / topic filter.
+- Matches to one or more queues via bindings.
+
+**Store:**
+- Message is persisted in the queue (disk or memory).
+
+**Deliver:**
+- Broker pushes (or consumer pulls) the message to a consumer.
+
+**Acknowledge:**
+- Consumer processes and sends ACK.
+- On success → broker deletes message.
+- On failure → NACK or no‐ack → broker re‐queues or DLQs after retries.
+- Cleanup & Metrics:
+- Broker updates metrics (throughput, retries, DLQ count).
+- Monitoring dashboards surface health and performance.
+
+##### Questions about Message Queue
+> 1. How to gurantee messages are not lost
+> 2. How to deal with duplicate messages
+> 3. How to gurantee the order of messages
+> 4. How to deal with accumulative messages 
+
+**-->** Examples of using message queue 
+![alt text](./images/nofitication-1.png)
