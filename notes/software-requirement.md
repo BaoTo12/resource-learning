@@ -73,50 +73,102 @@ Trigger identifies the conditions, or events that initiate the use case. Think o
 
 **Description**
 Description briefly explains what the use case accomplishes from a business perspective. Write it as if you're explaining to a non-technical stakeholder why this functionality matters.
+Template : The **<Use_Case_Name>** use case represents the process performed by **<Actor_Name>** to **<DO_SOMETHING>**. ....
 
 **Pre-conditions**
 Preconditions define the state that must exist before the use case can begin successfully. Think of them as the prerequisite conditions that create a foundation for the interaction.
+
 - ==User-related preconditions== ensure the right person is attempting the right action, for ex authentication, authorization
 - ==System-related preconditions== ensure the technology infrastructure is ready, for ex the system must be operational, the database must be accessible, and any required external systems must be available
 - ==Data-related preconditions== ensure the necessary information exists
 
+Ký hiệu: PRE-<**Number**>
+For example, PRE-1: The barcode reader, printer is connected and functioning correctly
+
 **Post-conditions**
 Post-conditions describe how the world has changed after the use case completes, whether successfully or unsuccessfully. Think of them as the "after" state that you could observe and verify.
-- ==Successful completion==, identify what new information exists in the system, what relationships have been established or modified, and what new capabilities are now available to users. 
-- ==Failure scenarios==, consider what partial changes might have occurred and what cleanup might be necessary. 
+
+- ==Successful completion==, identify what new information exists in the system, what relationships have been established or modified, and what new capabilities are now available to users.
+- ==Failure scenarios==, consider what partial changes might have occurred and what cleanup might be necessary.
+
+Ký hiệu: POST-<**Number**>
+For example, POST-1: The order is successfully created and stored in the system
 
 **Normal Flow**
 The step-by-step description of how the interaction unfolds when everything goes smoothly.
+
 - Start with the user's initial action and then alternate between user actions and system responses. Each step should be concrete and observable - something you could test or demonstrate. Avoid internal system details that the user can't see, and focus on the externally visible behavior that creates value.
-- The scenario should follow a natural rhythm of interaction. Users need time to read information, make decisions, and enter data. Systems need time to process requests, validate information, and prepare responses. 
+- The scenario should follow a natural rhythm of interaction. Users need time to read information, make decisions, and enter data. Systems need time to process requests, validate information, and prepare responses.
 - Consider the cognitive load on the user at each step. Are you asking them to provide information they naturally have available? Are you giving them feedback at appropriate moments? Are you breaking complex tasks into manageable chunks? The main scenario should feel intuitive to someone actually performing the work.
+**Template**
+
+```
+1.	The cashier initiates the “Create an order” use case by selecting the menu “Create new order” on the system
+2.	The cashier asks the customer if he/she would like to record his/her purchase for membership benefits (by asking the customer the phone number)
+3.	The system activates the barcode reader to allow scanning products [see 1-AF]
+4.	The cashier scans each product’s barcode using the barcode reader [see 1-AF]
+5.	For each scanned product, the system identifies the product details: id, name, price, quantity, promotion (if any) and adds the item into the order
+6.	The system calculates the total order amount at whole
+7.	After scanning all of the desired products, the casher asks the customer for the preferred payment method (cash, wallet, card) [see 2-AF]
+8.	The customer chooses the “Cash” payment option [???phiếu quà tặng thay tiền mặt]
+9.	The cashier confirms the payment and finalizes the order
+10.	The system updates the inventory accordingly, generates/prints the receipt/bill and returns to the customer, update membership benefits (if any)
+
+```
 
 **Alternative flow**
-Alternative flows handle the complications that arise when the ideal scenario encounters real-world messiness. 
+Alternative flows handle the complications that arise when the ideal scenario encounters real-world messiness.
+
 - Think systematically about what could vary at each step of the main scenario. Users might enter invalid data, make different choices, or change their minds. Systems might detect business rule violations, encounter performance issues, or lose connectivity to external services.
 - For each alternative flow, specify where it branches from the main scenario, what triggers the alternative path, how the system responds, and where the flow either rejoins the main path or exits the use case entirely.
 
+**Template**
+
+```
+1-AF: The barcode reader fails to scan a product/doesn’t work correctly
+a.	The casher manually enters the product details including the product code and quantity via GUI [??? Nhập sai mã s/p]
+b.	For each manually entered product, the system identifies the product details: id, name, price, quantity, promotion (if any) and adds the item into the order
+c.	Return to STEP 6 (NF) of normal flow
+2-AF: The customer chooses the “wallet” payment option
+a.	The system checks the customer’s wallet balance to ensure it covers the total order amount
+b.	If the wallet balance is sufficient, the system deducts the amount from the customer’s wallet [??? Tiền trong ví ko đủ]
+c.	Return to STEP 9 (NF) of normal flow
+?-AF:
+
+
+```
+
 **Exceptions**
 While alternative flows handle variations in the normal process, exceptions represent truly disruptive conditions that can occur at any point during the use case execution.
+**Template**: <**Number**>-EF. At any time, the app (or something) cannot communicate with the server/core system (or something) (due to network malfunction/technical issues), the system displays an error message. The <**Actor_Name**> calls the technical support for supporting purpose
+For example 1-EF: At any time, the app cannot communicate with the server/core system (due to network malfunction/technical issues), the system displays an error message. The cashier calls the technical support for supporting purpose
 
 **Priority**
-Priority reflects the relative importance of this use case within your overall system development effort. 
+Priority reflects the relative importance of this use case within your overall system development effort.
+Three levels: ==High (Medium, Low)==
 
 **Frequency of Use**
-This section captures how often you expect this use case to be executed, which has profound implications for system design, performance requirements, and user interface considerations. 
+This section captures how often you expect this use case to be executed, which has profound implications for system design, performance requirements, and user interface considerations.
+
 - High frequency
 - Medium frequency
 - Low frequency
 
 **Business Rules**
 Business rules represent the policies, regulations, constraints, and logical conditions that your system must enforce.
+
 - Business rules can be ==constraining==, like "Exam slots cannot overlap in the same room" or "Students cannot check into an exam more than 30 minutes before the scheduled start time."
 - They can be ==derivational==, like "Total exam duration equals scheduled end time minus scheduled start time" or "Exam capacity equals room capacity minus 10% buffer for accessibility needs."
+
+**Template**: BR-<**Number**>
+For example
+BR-1: The system must support different payment method (cash, wallet, card…)
+BR-2: The payment process has an option to record the customer payment by using physical voucher
+BR-3: Using phone number to record/keep track the customer membership info
+ 
 
 **Other Information**
 This catch-all section captures important information that doesn't fit neatly into other categories but still influences how the use case should be implemented or understood
 
 **Assumptions**
 Assumptions represent the conditions or facts that you're taking for granted when writing the use case. These are the things you believe to be true but haven't explicitly verified or that represent decisions made elsewhere in the project that affect this particular use case.
-
-
