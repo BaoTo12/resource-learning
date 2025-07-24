@@ -94,13 +94,26 @@ Post-conditions describe how the world has changed after the use case completes,
 Ký hiệu: POST-<**Number**>
 For example, POST-1: The order is successfully created and stored in the system
 
+```
+Success:
+1. New exam slot is created and stored in the FUE360 database
+2. Exam slot appears in system listings for all authorized users
+3. Exam slot is available for student check-in and check-out operations
+4. System audit log records the creation activity
+
+Failure:
+1. No exam slot is created in the system
+2. Database remains unchanged
+3. Error is logged for administrative review
+```
+
 **Normal Flow**
 The step-by-step description of how the interaction unfolds when everything goes smoothly.
 
 - Start with the user's initial action and then alternate between user actions and system responses. Each step should be concrete and observable - something you could test or demonstrate. Avoid internal system details that the user can't see, and focus on the externally visible behavior that creates value.
 - The scenario should follow a natural rhythm of interaction. Users need time to read information, make decisions, and enter data. Systems need time to process requests, validate information, and prepare responses.
 - Consider the cognitive load on the user at each step. Are you asking them to provide information they naturally have available? Are you giving them feedback at appropriate moments? Are you breaking complex tasks into manageable chunks? The main scenario should feel intuitive to someone actually performing the work.
-**Template**
+  **Template**
 
 ```
 1.	The cashier initiates the “Create an order” use case by selecting the menu “Create new order” on the system
@@ -165,10 +178,16 @@ For example
 BR-1: The system must support different payment method (cash, wallet, card…)
 BR-2: The payment process has an option to record the customer payment by using physical voucher
 BR-3: Using phone number to record/keep track the customer membership info
- 
 
 **Other Information**
 This catch-all section captures important information that doesn't fit neatly into other categories but still influences how the use case should be implemented or understood
 
 **Assumptions**
 Assumptions represent the conditions or facts that you're taking for granted when writing the use case. These are the things you believe to be true but haven't explicitly verified or that represent decisions made elsewhere in the project that affect this particular use case.
+
+##### Template to write non-functional requirements
+###### Security 
+- The **System_Name** must authenticate all users within 2 seconds using **Something** through the **System_Name**'s SSO system, and must automatically lock user accounts for 15 minutes after 3 consecutive failed login attempts within a 5-minute period.
+- The **System_Name**  must encrypt all **Actor_Name** data and personal information using SHA-256 encryption algorithm, m...
+###### Performance 
+- The **System_Name**  must support concurrent **Action_Name** operations for at least 1000 **Actor_Name**  simultaneously across **System_Name**, with system response time not exceeding 3 seconds for any user transaction under normal operating load conditions.
