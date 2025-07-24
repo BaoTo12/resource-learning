@@ -185,6 +185,15 @@ This catch-all section captures important information that doesn't fit neatly in
 **Assumptions**
 Assumptions represent the conditions or facts that you're taking for granted when writing the use case. These are the things you believe to be true but haven't explicitly verified or that represent decisions made elsewhere in the project that affect this particular use case.
 
+---
+![use-case-specification-example1](./images/use-case-specification-example1.png)
+
+---
+![use-case-specification-example2](./images/use-case-specification-example2.png)
+
+---
+
+
 ##### Template to write non-functional requirements
 ###### Security 
 - The **System_Name** must authenticate all users within 2 seconds using **Something** through the **System_Name**'s SSO system, and must automatically lock user accounts for 15 minutes after 3 consecutive failed login attempts within a 5-minute period.
