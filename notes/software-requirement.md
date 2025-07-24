@@ -73,8 +73,8 @@ Trigger identifies the conditions, or events that initiate the use case. Think o
 
 **Description**
 Description briefly explains what the use case accomplishes from a business perspective. Write it as if you're explaining to a non-technical stakeholder why this functionality matters.
-Template : The **<Use_Case_Name>** use case represents the process performed by **<Actor_Name>** to **<DO_SOMETHING>**. ....
-
+**Template** : The **<Use_Case_Name>** use case represents the process performed by **<Actor_Name>** to **<DO_SOMETHING>**. ....
+**Template** : The **<Use_Case_Name>** enter the **System name** from either cooperate intranet or external Internet. 
 **Pre-conditions**
 Preconditions define the state that must exist before the use case can begin successfully. Think of them as the prerequisite conditions that create a foundation for the interaction.
 
@@ -155,6 +155,10 @@ c.	Return to STEP 9 (NF) of normal flow
 While alternative flows handle variations in the normal process, exceptions represent truly disruptive conditions that can occur at any point during the use case execution.
 **Template**: <**Number**>-EF. At any time, the app (or something) cannot communicate with the server/core system (or something) (due to network malfunction/technical issues), the system displays an error message. The <**Actor_Name**> calls the technical support for supporting purpose
 For example 1-EF: At any time, the app cannot communicate with the server/core system (due to network malfunction/technical issues), the system displays an error message. The cashier calls the technical support for supporting purpose
+DB Unavailable: System cannot persist record if database is down → show “Service Unavailable.”
+Excel Parse Error: Uploaded file corrupt/invalid format → prompt re‑upload.
+
+
 
 **Priority**
 Priority reflects the relative importance of this use case within your overall system development effort.
