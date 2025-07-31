@@ -59,3 +59,86 @@ The Network Access Layer is the bottom layer of the TCP/IP model. It deals with 
 - Internet Layer: Checks the IP address, removes the IP header, and forwards data to the Transport Layer.
 - Transport Layer: Reassembles segments, checks for errors, and ensures data is complete.
 - Application Layer: Delivers the final data to the correct application (e.g., displays a web page in the browser).
+
+---
+
+### HTTP/1.1 vs HTTP/2 : Tại sao HTTP/2 lại nhanh hơn?
+
+**HTTP (Hypertext Transfer Protocol)** là giao thức truyền tải tài nguyên cho Web theo mô hình Client-Server (hoặc Request-Response).
+
+#### HTTP/1.1
+
+HTTP/1.1 (version 1.1) phát hành vào năm 1999. ĐIểm nổi bật ở phiên bản này là hỗ trợ nhiều method hơn (GET, POST, PUT, DELETE, HEAD, OPTIONS và TRACE), có header. Hỗ trợ TCP Connection persistent connection(HTTP keep-alive) và HTTP Pipelining.
+
+##### HTTP persistent connection (HTTP keep-alive)
+
+Thay vì tạo mới TCP connection cho mỗi request và đóng sau khi nhận được response. Client sẽ tái sử dụng một TCP connection có sẵn cho nhiều HTTP request/response.
+
+---
+
+![alt text](./images/http-keep-alive.png)
+
+---
+
+##### HTTP Pipelining
+
+HTTP Pipelining cho phép Client gửi nhiều request liên tiếp mà không cần chờ response của request trước đó. Các request này sẽ được Server xử lý tuần tự, và response cũng sẽ được trả về theo đúng thứ tự request đã được gửi.
+Tuy nhiên, nếu một request trong chuỗi gặp sự cố (ví dụ: mất gói tin, kết nối chậm), tất cả các request sau nó sẽ bị chặn (block) cho đến khi request bị lỗi được xử lý xong. Vấn đề này được gọi là Head-of-Line (HOL) blocking, là một hạn chế lớn của HTTP pipelining dựa trên TCP.
+Để giải quyết các vấn đề của HTTP/1. SPDY (phát âm là "speedy") được tạo ra, SPDY ảnh hưởng đến việc thiết kế HTTP/2 sau này. Hãy tiếp tục để xem SPDY là gì và cách SPDY giải quyết các vấn đề của HTTP/1 như thế nào.
+
+#### SPDY là gì?
+
+SPDY giải quyết các vấn đề của HTTP/1
+
+- **Head-of-line blocking**: Trong HTTP/1.1, nếu một request bị chậm hoặc lỗi, các request sau nó sẽ bị chặn. SPDY khắc phục bằng cách hỗ trợ multiplexing: nhiều request có thể được gửi song song qua cùng một TCP connection, mỗi request/response được gắn với một streamID. Vì vậy, một request bị lỗi sẽ không ảnh hưởng đến các request khác. Ở phần HTTP/2 sẽ giải thích rõ hơn về cách xử lý vấn đề này.
+- **Overhead HTTP headers**: HTTP/1.1 gửi lại toàn bộ headers cho mỗi request, gây ra độ trễ không cần thiết. SPDY sử dụng nén header để giảm kích thước dữ liệu truyền tải, giúp cải thiện hiệu suất mạng.
+- **Server Push**: Trong HTTP/1.1, Server chỉ phản hồi khi nhận được request từ client. SPDY bổ sung server push, cho phép Server chủ động gửi các tài nguyên mà nó đoán là Client sẽ cần, ví dụ như CSS, JavaScript, hình ảnh.
+
+#### HTTP/2
+
+HTTP/2 được phát triển dựa trên SPDY là phiên bản nâng cấp của HTTP/1 được thiết kế để cải thiện tốc độ và hiệu quả truyền dữ liệu trên web. Ra mắt vào năm 2015.
+
+HTTP/2 sử dụng các kỹ thuật như ghép kênh (multiplexing), nén header, và đẩy dữ liệu từ Server (server push) để tối ưu hóa việc truyền tải dữ liệu.
+
+##### Multiplexing
+
+Multiplexing là tính năng quan trọng trong HTTP/2 giúp giải quyết vấn đề Head-of-Line (HOL) blocking ở tầng HTTP tồn tại trong HTTP/1.1.
+
+Trong HTTP/1.1, dù sử dụng HTTP pipelining, các response vẫn phải được trả về theo thứ tự gửi request, dẫn đến tình trạng tắc nghẽn nếu một request gặp lỗi hoặc bị chậm.
+
+HTTP/2 khắc phục vấn đề này bằng cách sử dụng các stream, mỗi stream tương ứng với một cặp request/response độc lập.
+
+Mỗi stream sẽ được chia thành các frame. Mỗi frame chứa các thông tin về loại stream ID, loại frame và độ dài byte của frame đó. Các frame thuộc các stream khác nhau có thể được trộn lẫn và gửi đồng thời qua cùng một kết nối TCP.
+
+![Multiplexing](./images/multiplexing.png)
+
+Tuy nhiên, HTTP/2 chỉ giải quyết được HOL Blocking ở tầng HTTP. Nhưng vấn đề HOL Blocking vẫn còn ở tầng Transport do TCP bắt buộc đảm bảo thứ tự gói tin: nếu một gói bị mất, các gói sau phải chờ. Chỉ đến HTTP/3, khi TCP được thay bằng QUIC, vấn đề này mới được xử lý triệt để.
+
+##### HTTP/2 truyền tải dữ liệu dạng nhị phân (Binary Protocol)
+
+Khác với các phiên bản HTTP/1.x truyền dữ liệu dưới dạng văn bản (text), HTTP/2 sử dụng định dạng nhị phân để truyền tải.
+
+##### Prioritization
+
+Trong HTTP/2, Client có thể chỉ định mức độ ưu tiên (priority) cho từng request, giúp Server biết nên xử lý và phản hồi request nào trước dựa trên tầm quan trọng.
+
+Tính năng này đặc biệt hữu ích khi tải một trang web phức tạp, nơi có nhiều tài nguyên được yêu cầu đồng thời.
+
+Ví dụ về thứ tự ưu tiên từ cao đến thấp khi tải một trang web:
+- HTML – cấu trúc chính của trang, nên tải đầu tiên.
+- CSS / JavaScript – ảnh hưởng đến hiển thị và chức năng, cần được tải sớm.
+- Font – cần cho việc hiển thị văn bản đúng định dạng.
+- Image – thường không ảnh hưởng đến cấu trúc hoặc logic chính, có thể tải sau.
+
+##### Header Compression
+Các thông tin được truyền tải trên Web chứa nhiều header lặp đi lặp lại. HTTP/2 sử dụng HPACK compress (nén) các header này giúp giảm tải băng thông.
+
+##### Server Push
+
+Trong HTTP/2, Server Push là cơ chế cho phép Server chủ động gửi thêm các tài nguyên mà nó dự đoán Client sẽ cần, mà không cần chờ Client gửi request cho các tài nguyên đó.
+
+Khi Client gửi một request (ví dụ: tải một trang HTML), Server có thể đồng thời "push" các tài nguyên liên quan như CSS, JavaScript, hoặc hình ảnh đi kèm. Điều này giúp giảm số lượng round-trip giữa Client và Server, từ đó tăng tốc độ tải trang.
+
+![Server Push](./images/server-push.png)
+
+---
