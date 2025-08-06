@@ -87,7 +87,7 @@ Redis Transactions allow the execution of a group of commands in a single step, 
 - WATCHed keys are monitored in order to detect changes against them. If at least one watched key is modified before the EXEC command, the whole transaction aborts, and EXEC returns a Null reply to notify that the transaction failed.
 - So what is WATCH really about? It is a command that will make the EXEC conditional: we are asking Redis to perform the transaction only if none of the WATCHed keys were modified
 
-### Summary
+#### Summary
 
 Transaction is a group of command that starts with "MULTI" command and ends with "EXEC" command
 Transactions in Redis have the following properties
@@ -96,6 +96,13 @@ Transactions in Redis have the following properties
 - All commands in a transaction will be queued and performed sequentially
 - During the process of performing a transaction if a command is failed to execute, other commands will be performed normally
 - Command Queueing Error (before EXEC) ❌ Entire transaction is discarded. Redis refuses to run EXEC. Syntax error, wrong arity (e.g., SET key without a value).
+
+### Redis Pipeline
+- Pipeline hỗ trợ đóng gói nhiều command vào một câu lệnh duy nhất, giúp ta không cần gọi nhiều request liên tục nếu cần thực thi nhiều command
+- Khác với transaction, pipeline không thực thi các command liên tục và cũng không chờ đợi các command trước đó hoàn thành thì mới gọi command tiếp theo 
+
+----
+
 
 ## Redis Pub/sub
 
@@ -148,5 +155,63 @@ _Here is how it works_:
 
 ### Các cấu trúc dữ liệu hiệu quả
 Vì Redis là cơ sở dữ liệu in-memory, nó có thể tận dụng một số cấu trúc dữ liệu bậc thấp hiệu quả mà không phải lo lắng làm sao để lưu chúng vào đĩa một cách hiệu quả. Danh sách liên kết, skip list, hash table là một số ví dụ.
+
+
+## Cach Eviction
+When redis uses max memory capacity at this time it uses something called "eviction policy" to discard some data
+### Eviction Policy
+- LRU (Least Recently Used)
+- LFU (Least Frequently Used)
+- Random
+- Least TTL (Time To Live)
+- Nonevict
+
+
+## Cache Persistent
+- Là một cơ chế cho phép redis lưu dữ liệu xuống disk để tránh tình trạng "Cold Start", là 1 trạng thái khi Redis server khởi động và không có gì trong RAM cả
+
+
+## Redis Replication
+
+### Redis Master-slave architecture
+Các hệ thống lớn thường dùng replication để đảm bảo performance, durability, thay vì lưu trên disk để backup (persistent on)
+- There is one node called master, and responsible for write operations
+- Other nodes are slave(replica) nodes, and responsible mainly for read operations (master node can perform read operations too). Data from master node is synchronized to slave nodes by a separate protocol based on asynchronous mechanism.
+- When a node is not available, so other nodes have backup, the cached data in which every node has, even when the master node dies, one replica node can replace it.
+
+## Scalability
+- Để có thể scale 1 hệ thống redis, chúng ta sẽ sử dụng nhiều node redis như là redis cluster.
+- Redis cluster can be implemented by replication, culster mode, sentinel, ...
+- However, in real-world projects, system will let developers use redis as one node for simplicity (the management of cluster will be performed by devOps team, or cloud service like **AWS/elastic cache/**, **Azure/azure cache/**)
+
+### Redis Sentinel
+- Thường được cài đặt cùng với cụm Redis Replicaiton để bổ sung khả năng **Fail-over** hay tăng khả năng **High Availability** cho Redis
+- Redis Sentinel dùng để giám sát các node trong cụm Redis
+![Redis Sentinel](./images/redis-sentinel.png)
+
+- Like the above image, sentinel nodes are monitoring master and slave node and then these nodes will log out information like restart, stop, start
+> **_So What is this information used for?_**
+- This information is used in case "Fail-over" (Chuyển đổi dự phòng). Nếu như trước đây bạn chỉ cài đặt lên cụm replication thì khi node Master có vấn đề (down) thì bạn sẽ phải login vào server, khắc phục thủ công bằng tay bằng cách nâng 1 con slave bất kỳ lên làm Master . Tuy nhiên khi sử dụng Sentinel thì service này sẽ giúp bạn tự động hóa việc này.
+- Sau 1 khoảng thời gian nhất định khi Sentinel không thể kết nối với Master node bằng cách gửi command PING đi mà không nhận được về PONG thì sẽ đánh dấu Node này đã bị down. Tiếp theo để đảm bảo tính chính xác, node này sẽ hỏi các node Sentinel khác rằng "ê mày có thấy thằng Master này down không?" . Nếu 1 số node nhất định cùng đồng ý rằng thằng Master này down (số node cần được xác định bằng thông số quorum trong config với công thức **số node sentinel/2 + 1** tương đương hơn 1 nửa) thì các node Sentinel sẽ cùng nhau bầu ra 1 Master mới. Còn nếu số node không đủ như yêu cầu thì quá trình bầu ra Master mới sẽ bị hoãn.
+> **_So which node is eligible to be a master node ?_**
+- We choose master node based on these criteria
+    - slave-priority is configured on /etc/redis/redis.conf
+    - If this priority is not present, sentinal will automatically generate an ID and node has the lowest ID will be a master
+
+### Redis Cluster
+- In this architecture there are more than one master nodes, and each master node will have their slave nodes. Salve nodes will communicate through specific protocol to get data from master node. Master nodes know the total number of current master nodes
+- Each master-slave cluster will hold a shard of data. Based on shard of data corresponding master-slave cluster will respond 
+- In this architecture data is sharded (horizontal partitioning)
+
+![Redis Cluster](./images/redis-cluster.png)
+
+### USE CASE 1: Cache from another database
+Khi trong một hệ thống operations của db rất chậm, và quá nhiều request tương tự nhau được thực hiện nhiều lần (benchmark and monitor để đo)
+![Traditional use of Redis](./images/use-of-tradition-redis.png)
+- Use command set/get
+
+Dữ liệu của Redis sẽ được đồng bộ với dữ liệu của database
+- Ghi dữ liệu từ db ngay sau khi dữ liệu không tồn tại trên redis(2), cách này có thể làm cho dữ liệu get ra không phải là latest, cần set TTL của key với thời gian phù hợp
+- Dùng một process riêng để đồng bộ từ db tới Redis, cách này sẽ đảm bảo dữ liệu không quá outdate so với bản gốc, tuy nhiên yêu cầu redis cần có memory lớn (or cần lựa chọn hot key để lưu), hoặc sẽ không phù hợp nếu db change quá nhiều.
 
 
