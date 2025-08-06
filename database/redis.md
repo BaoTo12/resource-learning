@@ -205,7 +205,7 @@ Các hệ thống lớn thường dùng replication để đảm bảo performan
 
 ![Redis Cluster](./images/redis-cluster.png)
 
-### USE CASE 1: Cache from another database
+#### USE CASE 1: Cache from another database
 Khi trong một hệ thống operations của db rất chậm, và quá nhiều request tương tự nhau được thực hiện nhiều lần (benchmark and monitor để đo)
 ![Traditional use of Redis](./images/use-of-tradition-redis.png)
 - Use command set/get
@@ -214,4 +214,17 @@ Dữ liệu của Redis sẽ được đồng bộ với dữ liệu của datab
 - Ghi dữ liệu từ db ngay sau khi dữ liệu không tồn tại trên redis(2), cách này có thể làm cho dữ liệu get ra không phải là latest, cần set TTL của key với thời gian phù hợp
 - Dùng một process riêng để đồng bộ từ db tới Redis, cách này sẽ đảm bảo dữ liệu không quá outdate so với bản gốc, tuy nhiên yêu cầu redis cần có memory lớn (or cần lựa chọn hot key để lưu), hoặc sẽ không phù hợp nếu db change quá nhiều.
 
+#### USE CASE 2: Cache cho nhiều instances
+Ví dụ cấu trúc dự án của chúng ta là microservice thì việc có một server riêng để cache thì các microservices có thể access
 
+#### USE CASE 3: Rate Limiter
+- **Rate limiter** là một phương pháp giúp limit lượng request/ action nào đó trong hệ thống
+VD: limit một người dùng không đặt hàng quá 100 lần / phút, hay limit số request vào hệ thống không quá 100k qps để đảm bảo tốc độ hệ thống ...
+-  Rate limiter cơ bản có thể dùng lệnh incr để đếm số lần action được thực hiện, cùng với expire để reset số đếm này sau 1 thời gian (1s/1min/1 hour...). Ngoài ra có thể tham khảo thêm các thuật toán **sliding window/ leaky bucket để tối ưu rate limiter**
+
+#### USE CASE 4: Leaderboard / Rank board
+- Khi muốn đếm một action/ điểm số của các phần tử và muốn lấy được top N phần tử lớn nhất/ nhỏ nhất, các command của sorted set cũng có thể được sử dụng
+
+#### USE CASE 5: Counting
+- Khi muốn đếm số phần tử distinct của một set , thay vì sử dụng set, ta còn có thể sử dụng hyperloglog để thay thế nếu cần hiệu suất cao hơn và có thể chấp nhận sai số.
+- Một vài ví dụ như: số lượng like/ view của một status trên facebook
