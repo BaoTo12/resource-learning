@@ -49,3 +49,20 @@ Def: Functional Partitioning là phương pháp phân vùng dữ liệu dựa tr
 - **Tần suất truy vấn**: Nếu một số cột dữ liệu được truy vấn thường xuyên hơn những cột khác, Vertical Partitioning có thể là lựa chọn tốt để tăng hiệu suất truy vấn.
 - **Yêu cầu về hiệu suất và khả năng mở rộng**: Functional Partitioning có thể giúp tối ưu hóa hiệu suất cho từng chức năng cụ thể và hỗ trợ tốt cho khả năng mở rộng hệ thống.
 - **Nguồn lực hạ tầng và khả năng quản lý**: Việc phân vùng dữ liệu có thể tạo ra sự phức tạp về mặt quản lý và vận hành hệ thống. Hãy xem xét khả năng quản lý của đội ngũ kỹ thuật của bạn và nguồn lực hạ tầng hiện có.
+
+### Redis
+
+> **Single-threaded Redis Speed: How I/O Multiplexing and In-Memory Storage Make Redis a Powerhouse**
+
+
+![I/O Multiplexing](./images/io-multiplexing.png)
+
+#### I/O Multiplexing -  Efficient Management of Concurrent Connections
+Redis employs I/O multiplexing, is a technique that allows Redis to handle multiple client connections concurrently using a single thread. 
+_Here is how it works_:
+- **Non-Blocking I/O**: I/O multiplexing enables Redis to use non-blocking I/O. Rather than waiting for each client connection to complete before processing the next, Redis can move on to check other connections while waiting for data from one client.
+- **Event Loop Management**: Redis continuously runs an event loop that processes client commands from the queue as soon as they are ready. This minimizes time wasted waiting for I/O operations, ensuring Redis can handle multiple concurrent requests without creating additional threads.
+![Event Loop Management](./images/event-loop-management.png)
+
+#### Các cấu trúc dữ liệu hiệu quả
+Vì Redis là cơ sở dữ liệu in-memory, nó có thể tận dụng một số cấu trúc dữ liệu bậc thấp hiệu quả mà không phải lo lắng làm sao để lưu chúng vào đĩa một cách hiệu quả. Danh sách liên kết, skip list, hash table là một số ví dụ.
