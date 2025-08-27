@@ -103,5 +103,44 @@ Machine learning languages
 
 
 
+### What is Regression
+
+**Linear Regression**
+- Is a type of supervised machine learning
+- Models a relationship between a continuous target variable and explanatory features
+
+**Type of Regression**
+- Simple Regression: is when a single independent variable estimates a dependent variable
+    - Can be linear, for example to estimate the CO2 emission by using independent variable engine size linear simple regression creates a linear relationship between two variables
+    - Can be Non-linear, similarly, non-linear regression creates a non-linear relationship between those variables
+
+- Multiple Regression : is when more than one independent variables are present, the process is called multiple regression. The distinction between linear and non-linear relationships apply to simple and multiple
+
+**Applications Of Regression**: we use regression when we want to estimate continuous values
+- Sale forecasting
+- Employment income
+- Price estimation
+
+**Regression Algorithms**
+- Linear and Polynomial regression are classical statistical modeling methods
+- Random Forest 
+- Extreme Gradient Boosting (XGBoost)
+- K Nearest Neighbors (KNN)
+- Support Vector Machine (SVM)
+- Neural Network
+
+#### Simple Linear Regression
+Describe Simple Linear Regression?
+
+How Simple Linear Regression works?
+
+
+
+
+
+
+
+
+
 
 
